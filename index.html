@@ -139,7 +139,13 @@
   <div id="tab-plan" class="tab">
     <div class="card">
       <div class="stitle">📅 1주일 식단표 <button class="iinfo" onclick="showInfo('plan')" aria-label="설명">ⓘ</button></div>
-      <div class="hint">질리지 않게 + 영양 골고루, 월~일 식단을 한 번에 짜드려요. 이 폰에 저장돼요.</div>
+      <div class="hint">질리지 않게 + 영양 골고루, 아침·점심·저녁 일주일 식단을 한 번에 짜드려요. 이 폰에 저장돼요.</div>
+      <div class="hint" style="margin-top:6px">🚫 빼고 싶은 재료 (알레르기·비선호) — 추천 탭에도 함께 적용돼요</div>
+      <div class="chips" id="dislikes" style="margin-bottom:10px"></div>
+      <div class="row" style="margin-top:0; margin-bottom:12px">
+        <input id="newDis" placeholder="예: 생선, 오이 · 쉼표로 여러 개" enterkeyhint="done">
+        <button class="btn green" onclick="addDislike()">추가</button>
+      </div>
       <button class="toggle on" id="planBabyBtn" onclick="togglePlanBaby()">👶 <b style="font-family:'Jua'">유아식 포함</b>&nbsp;켜짐</button>
       <button class="toggle on" id="planPantryBtn" onclick="togglePlanPantry()">🧲 <b style="font-family:'Jua'">저장고 재료 우선</b>&nbsp;켜짐</button>
       <button class="cta" id="planBtn" onclick="recommendWeek()">📅 1주일 식단표 만들기</button>
@@ -310,9 +316,10 @@ const INFO = {
     ② AI와 무관하게 <b>자주 해먹는 음식을 직접 추가</b>할 수 있어요 (예: 소고기미역국). 분류를 골라서요.</p>
     <p>"오늘 뭐 해먹지" 할 때 추천을 돌리지 않고 바로 꺼내 보는 즐겨찾기 용도예요. 폰에 계속 저장돼요.</p>`},
   plan: {t:"📅 1주일 식단표", b:`
-    <p>월~일 7일치 식단(유아식·어른식·간식)을 한 번에 짜줘요. 두 가지 원칙으로요:</p>
+    <p>월~일 7일치, <b>아침·점심·저녁</b>이 있는 급식표 스타일 식단(유아식·어른식·간식)을 한 번에 짜줘요. 두 가지 원칙으로요:</p>
     <p><b>① 질리지 않게</b> — 일주일 안에 같은 요리를 반복하지 않고, 주재료와 조리법(볶음/국/찜/구이…)을 돌려가며 배치해요.<br>
-    <b>② 영양 골고루</b> — 단백질원(소고기·닭·생선·달걀·콩)과 채소를 주 단위로 순환시켜 균형을 맞춰요. 아래에 주간 영양 밸런스 요약도 보여줘요.</p>
+    <b>② 영양 골고루</b> — 단백질원과 채소를 주 단위로 순환시키고, <b>날마다 탄:단:지 비율과 선정 근거(📊)</b>를 함께 보여줘요. 비율은 AI의 대략적 추정이라 참고용이에요.</p>
+    <p><b>🚫 빼고 싶은 재료</b>에 생선처럼 싫어하거나 알레르기 있는 재료를 등록하면, 식단표·추천·장보기 리스트 모두에서 빠져요. 폰에 저장돼서 계속 적용돼요.</p>
     <p><b>👶 유아식 포함</b>을 켜면 추천 탭에서 고른 개월수 단계에 맞는 <b>유아식 식단표</b>가 어른식 표와 별도로 만들어져요.<br>
     <b>🧲 저장고 재료 우선</b>을 켜면 내 재료 저장고의 재료를 최대한 활용하고, 부족한 것만 🛒 장보기 리스트로 뽑아줘요.</p>
     <p>각 표의 <b>🖼 이미지로 저장</b>을 누르면 PNG 그림파일로 저장돼요 — 냉장고에 붙이거나 가족에게 카톡으로 보내기 좋아요.</p>
@@ -353,6 +360,7 @@ let S = {
   sort: load("sort","use"),
   week: load("week", null), planBaby: load("planBaby", true), planPantry: load("planPantry", true),
   prompts: load("prompts", {}),
+  dislikes: load("dislikes", []),
   edit:false, srcTab:"유아식", results:[], groundedList:[], loading:false,
 };
 const SORTS = { use:"🥕 재료 활용도순", health:"🥗 건강 점수순", ease:"⚡ 간편함순" };
@@ -454,6 +462,7 @@ function toggleHealthy(){
 function buildPrompt(){
   const srcNames = (S.sources[S.cat]||[]).map(s=>s.name).join(" / ") || "신뢰할 수 있는 요리·영양 자료";
   let base = `당신은 한국 가정식과 이유식에 능숙한 다정한 요리 도우미입니다.\n집에 있는 재료: ${S.selected.join(", ")}.\n기본 양념(소금·간장·참기름·물·기름)과 주식은 필요하면 더 써도 됩니다.`;
+  if(S.dislikes && S.dislikes.length) base += `\n[제외 재료 — 반드시 지킬 것] 다음 재료는 알레르기·비선호로 절대 사용하지 마: ${S.dislikes.join(", ")}. 필요하면 다른 재료로 대체해.`;
   let inst = P(S.cat).replace(/\{단계\}/g, S.stage);
   if(S.cat==="유아식") inst += `\n(안전 규칙 — 항상 적용: 12개월 미만 꿀·소금·설탕 금지, 간 최소화, 단계에 맞는 농도·입자 크기 준수)`;
   const grounding = `\n\n[출처] 다음 같은 신뢰할 수 있는 곳을 우선으로 웹 검색해서 참고해줘: ${srcNames}. 각 요리마다 실제로 검색된 원본 레시피/자료 URL을 하나씩 source_url 에 넣어줘. 레시피 문장은 저작권을 위해 반드시 네 말로 새로 요약하고 그대로 베끼지 마.`;
@@ -576,18 +585,21 @@ function syncPlanToggles(){
   b2.innerHTML=`🧲 <b style="font-family:'Jua'">저장고 재료 우선</b>&nbsp;`+(S.planPantry?"켜짐":"꺼짐");
 }
 function buildWeekPrompt(){
-  let p = `당신은 한국 가정식과 이유식에 능숙한 영양 균형 전문 식단 코치입니다.\n월요일부터 일요일까지 7일치 저녁 중심 가족 식단표를 짜주세요.\n`;
+  let p = `당신은 한국 가정식과 이유식에 능숙한 영양 균형 전문 식단 코치입니다.\n월요일부터 일요일까지, 매일 아침·점심·저녁이 있는 7일치 가족 식단표를 짜주세요.\n`;
   p += S.planBaby
-    ? `구성: 매일 [유아식("${S.stage}" 단계, 12개월 미만이면 꿀·소금·설탕 금지, 간 최소화), 어른식, 간식] 세 가지.\n`
-    : `구성: 매일 [어른식, 간식] 두 가지.\n`;
+    ? `구성: 매일 유아식("${S.stage}" 단계, 12개월 미만이면 꿀·소금·설탕 금지, 간 최소화)의 아침·점심·저녁 + 어른식의 아침·점심·저녁 + 간식 1가지.\n어른식 아침은 간단하게(든든하지만 손 덜 가게).\n`
+    : `구성: 매일 어른식의 아침·점심·저녁 + 간식 1가지. 아침은 간단하게.\n`;
+  if(S.dislikes && S.dislikes.length) p += `[제외 재료 — 반드시 지킬 것] 다음 재료는 알레르기·비선호로 절대 사용하지 마: ${S.dislikes.join(", ")}. 장보기 리스트에도 절대 넣지 마.\n`;
   if(S.planPantry && S.selected.length) p += `집에 있는 재료(${S.selected.join(", ")})를 최대한 활용하되, 없는 재료를 써도 됩니다.\n`;
   else if(S.planPantry && S.pantry.length) p += `집에 있는 재료(${S.pantry.join(", ")})를 최대한 활용하되, 없는 재료를 써도 됩니다.\n`;
   p += `\n`+P("식단표")+`\n`;
   if(S.healthy) p += P("건강식")+`\n`;
+  p += `[근거] 하루 단위로 탄수화물:단백질:지방 대략 비율(%)과, 그날 식단을 그렇게 짠 영양학적 이유를 한 문장으로 제시할 것. 비율은 대략적 추정임을 전제로 현실적으로.\n`;
+  const mealObj = `{"아침":"메뉴","점심":"메뉴","저녁":"메뉴"}`;
   p += `\n반드시 아래 JSON으로만 답하고 다른 말·마크다운·코드펜스는 넣지 마.\n`;
   p += S.planBaby
-    ? `{"days":[{"day":"월","baby":"유아식 메뉴","adult":"어른식 메뉴","snack":"간식"}],"shopping":["집에 없는 필요 재료만"],"balance":"이번 주 영양 밸런스 한두 문장 요약"}\n`
-    : `{"days":[{"day":"월","adult":"어른식 메뉴","snack":"간식"}],"shopping":["집에 없는 필요 재료만"],"balance":"이번 주 영양 밸런스 한두 문장 요약"}\n`;
+    ? `{"days":[{"day":"월","baby":${mealObj},"adult":${mealObj},"snack":"간식","macro":"탄 50 · 단 30 · 지 20","reason":"선정 근거 한 문장"}],"shopping":["집에 없는 필요 재료만"],"balance":"이번 주 영양 밸런스 두세 문장 요약(탄단지 관점 포함)"}\n`
+    : `{"days":[{"day":"월","adult":${mealObj},"snack":"간식","macro":"탄 50 · 단 30 · 지 20","reason":"선정 근거 한 문장"}],"shopping":["집에 없는 필요 재료만"],"balance":"이번 주 영양 밸런스 두세 문장 요약(탄단지 관점 포함)"}\n`;
   p += `- days는 월~일 정확히 7개. 메뉴 이름은 짧게(재료·방식이 드러나게).`;
   return p;
 }
@@ -599,7 +611,7 @@ async function recommendWeek(){
   try{
     const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(S.model)}:generateContent?key=${encodeURIComponent(S.key)}`;
     const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({contents:[{parts:[{text:buildWeekPrompt()}]}],generationConfig:{temperature:1.0}})});
+      body:JSON.stringify({contents:[{parts:[{text:buildWeekPrompt()}]}],generationConfig:{temperature:1.0, maxOutputTokens:8192}})});
     if(!res.ok){ const t=await res.text(); throw new Error(`HTTP ${res.status} — ${t.slice(0,180)}`); }
     const data=await res.json();
     const text=((data.candidates?.[0]?.content?.parts)||[]).map(p=>p.text||"").join("");
@@ -621,30 +633,62 @@ async function recommendWeek(){
     btn.disabled=false; btn.textContent="📅 1주일 식단표 만들기";
   }
 }
+// ── 🚫 제외 재료 ─────────────────────────────────────────────
+function renderDislikes(){
+  const box=document.getElementById("dislikes"); if(!box) return;
+  box.innerHTML="";
+  if(!S.dislikes.length){ box.innerHTML=`<span class="hint" style="margin:0">아직 없어요. 예: 생선을 등록하면 모든 추천·식단·장보기에서 빠져요.</span>`; return; }
+  S.dislikes.forEach((d,i)=>{
+    const b=document.createElement("button");
+    b.className="chip del"; b.textContent="🚫 "+d+" ✕";
+    b.onclick=()=>{ S.dislikes.splice(i,1); save("dislikes",S.dislikes); renderDislikes(); };
+    box.appendChild(b);
+  });
+}
+function addDislike(){
+  const el=document.getElementById("newDis");
+  el.value.split(/[,\n]/).map(s=>s.trim()).filter(Boolean).forEach(it=>{
+    if(!S.dislikes.includes(it)) S.dislikes.push(it);
+  });
+  el.value=""; save("dislikes",S.dislikes); renderDislikes();
+}
+
+function mealLines(m){
+  if(!m) return `<span>-</span>`;
+  if(typeof m==="string") return `<span>${m}</span>`;
+  return ["아침","점심","저녁"].filter(k=>m[k]).map(k=>
+    `<div style="display:flex; gap:8px; margin-bottom:2px">
+       <span style="min-width:32px; font-size:12px; color:var(--soft); padding-top:1px">${k}</span>
+       <span style="flex:1">${m[k]}</span></div>`).join("");
+}
 function renderWeek(){
   const box=document.getElementById("planResult"); box.innerHTML="";
   const w=S.week; if(!w||!Array.isArray(w.days)) return;
   const today="일월화수목금토"[new Date().getDay()];
-  const dayCell=(d)=>`<span style="font-family:'Jua'; min-width:56px; display:inline-block; color:${d.day===today?"var(--accent)":"var(--ink)"}">${d.day}요일${d.day===today?"·오늘":""}</span>`;
+  const dayHead=(d)=>`<div style="font-family:'Jua'; font-size:14.5px; margin-bottom:5px; color:${d.day===today?"var(--accent)":"var(--ink)"}">${d.day}요일${d.day===today?" · 오늘":""}</div>`;
   let html="";
 
-  // 🍚 유아식 식단표
+  // 🍚 유아식 식단표 (아침·점심·저녁)
   if(w.days.some(d=>d.baby)){
     html+=`<div class="card in" id="babyPlanCard">
       <div class="stitle">🍚 유아식 식단표 <span class="hint" style="margin:0">${S.stage} · ${w.madeAt||""}</span></div>`
-      + w.days.map(d=>`<div style="display:flex; gap:8px; border-bottom:1px dashed var(--line); padding:9px 2px; font-size:13.5px">
-          ${dayCell(d)}<span style="flex:1">${d.baby||"-"}</span></div>`).join("")
+      + w.days.map(d=>`<div style="border-bottom:1px dashed var(--line); padding:9px 2px; font-size:13.5px">
+          ${dayHead(d)}${mealLines(d.baby)}</div>`).join("")
       + `<div class="hint" style="margin-top:8px">12개월 미만 꿀·소금·설탕 금지 · 새 재료는 하나씩</div>
         <button class="btn green noshot" style="width:100%; margin-top:10px" onclick="saveImage('babyPlanCard','유아식_식단표')">🖼 이미지로 저장</button></div>`;
   }
 
-  // 🍲 어른식 식단표 (간식 포함)
+  // 🍲 어른식 식단표 (아침·점심·저녁 + 간식 + 탄단지 근거)
   html+=`<div class="card in" id="adultPlanCard">
     <div class="stitle">🍲 어른식 식단표 <span class="hint" style="margin:0">${w.madeAt||""}</span></div>`
-    + w.days.map(d=>`<div style="display:flex; gap:8px; border-bottom:1px dashed var(--line); padding:9px 2px; font-size:13.5px">
-        ${dayCell(d)}<span style="flex:1">${d.adult||"-"}${d.snack?`<br><span style="color:var(--soft)">🍪 ${d.snack}</span>`:""}</span></div>`).join("")
+    + w.days.map(d=>`<div style="border-bottom:1px dashed var(--line); padding:9px 2px; font-size:13.5px">
+        ${dayHead(d)}${mealLines(d.adult)}
+        ${d.snack?`<div style="display:flex; gap:8px; margin-top:2px"><span style="min-width:32px; font-size:12px; color:var(--soft)">간식</span><span style="flex:1; color:var(--soft)">🍪 ${d.snack}</span></div>`:""}
+        ${(d.macro||d.reason)?`<div style="margin-top:5px; font-size:12px; color:var(--leaf); background:#F0F6F2; border-radius:8px; padding:6px 8px">📊 ${[d.macro,d.reason].filter(Boolean).join(" — ")}</div>`:""}
+      </div>`).join("")
     + (w.balance?`<div class="health" style="margin-top:10px">🥗 <b>주간 밸런스</b> · ${w.balance}</div>`:"")
-    + `<button class="btn green noshot" style="width:100%; margin-top:10px" onclick="saveImage('adultPlanCard','어른식_식단표')">🖼 이미지로 저장</button></div>`;
+    + `<div class="hint" style="margin-top:6px">탄단지 비율은 AI의 대략적 추정치예요 — 참고용으로 봐주세요.</div>
+      <button class="btn green noshot" style="width:100%; margin-top:10px" onclick="saveImage('adultPlanCard','어른식_식단표')">🖼 이미지로 저장</button></div>`;
 
   // 🛒 장보기
   if(Array.isArray(w.shopping)&&w.shopping.length){
@@ -823,7 +867,9 @@ document.getElementById("apiKey").value = S.key;
 document.getElementById("modelSel").value = S.model;
 toggleHealthy(); toggleHealthy(); // 저장된 값 기준으로 표시 동기화
 renderPantry(); renderCats(); renderMenus(); renderSrcTabs(); renderSrcList(); renderKeyStatus();
-syncPlanToggles(); renderWeek(); renderPromptEditor();
+syncPlanToggles(); renderWeek(); renderPromptEditor(); renderDislikes();
+const disEl=document.getElementById("newDis");
+if(disEl) disEl.addEventListener("keydown",e=>{ if(e.key==="Enter") addDislike(); });
 </script>
 </body>
 </html>
