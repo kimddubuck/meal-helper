@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우리집 냉장고 식단 도우미</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Gaegu:wght@400;700&display=swap">
+<style>
+  :root{
+    --paper:#F3EFE4; --board:#EAE4D4; --ink:#2C2A24; --soft:#7A7461;
+    --line:#D8D0BC; --leaf:#35624A; --accent:#E08A4C; --tint:#FBEEDF;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{background:var(--paper); color:var(--ink); font-family:'Gowun Dodum',sans-serif; font-size:15px;
+       padding-bottom:calc(76px + env(safe-area-inset-bottom));}
+  .wrap{max-width:520px; margin:0 auto; padding:18px 14px 8px}
+  h1{font-family:'Jua',sans-serif; font-size:24px; margin:2px 0 4px; text-align:center}
+  .eyebrow{font-family:'Gaegu',cursive; color:var(--soft); text-align:center; font-size:14px}
+  .sub{color:var(--soft); font-size:13px; text-align:center; margin:0 0 16px}
+  .card{background:#fff; border:1.5px solid var(--line); border-radius:18px; padding:14px; margin-bottom:12px;
+        box-shadow:0 6px 20px rgba(0,0,0,.04)}
+  .board{background:var(--board); border:2px dashed var(--line); border-radius:20px; padding:14px; margin-bottom:14px}
+  .stitle{font-family:'Jua',sans-serif; font-size:15px; margin-bottom:10px; display:flex; align-items:center; gap:6px; justify-content:space-between}
+  .hint{font-size:12px; color:var(--soft); margin-bottom:10px}
+  .chips{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:8px 12px;
+        font-family:'Gaegu',cursive; font-size:17px; box-shadow:0 2px 0 rgba(0,0,0,.05); cursor:pointer; user-select:none}
+  .chip.on{background:var(--accent); border-color:var(--accent); color:#fff}
+  .chip.del{border-color:#C97; color:#B7492F}
+  .row{display:flex; gap:8px; margin-top:12px}
+  input,select{border:1.5px solid var(--line); border-radius:12px; padding:12px 13px; font-size:15px;
+        font-family:inherit; background:#fff; width:100%; color:var(--ink)}
+  input:focus,select:focus,button:focus-visible{outline:3px solid var(--accent); outline-offset:1px}
+  .btn{border:none; border-radius:12px; padding:12px 16px; font-family:'Jua',sans-serif; font-size:15px; cursor:pointer}
+  .btn.green{background:var(--leaf); color:#fff}
+  .btn.ghost{background:none; border:1px solid var(--line); color:var(--soft); font-family:'Gowun Dodum',sans-serif; font-size:13px}
+  .cats{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:10px}
+  .cat{background:#fff; border:2px solid var(--line); border-radius:16px; padding:12px 4px; text-align:center; cursor:pointer}
+  .cat .e{font-size:24px} .cat .l{font-family:'Jua',sans-serif; font-size:15px} .cat .s{font-size:11px; color:var(--soft)}
+  .cat.on{border-color:var(--accent); background:var(--tint)} .cat.on .l{color:var(--accent)}
+  .stagebox{background:var(--tint); border-radius:14px; padding:12px; margin-bottom:10px}
+  .stages{display:flex; flex-wrap:wrap; gap:6px}
+  .stage{background:#fff; border:1.5px solid var(--line); border-radius:20px; padding:8px 12px; font-size:13px; cursor:pointer}
+  .stage.on{background:var(--accent); border-color:var(--accent); color:#fff}
+  .toggle{width:100%; background:#fff; border:2px solid var(--line); border-radius:14px; padding:12px; margin-bottom:12px;
+          display:flex; align-items:center; justify-content:center; gap:8px; color:var(--soft); font-size:14px; cursor:pointer}
+  .toggle.on{background:#E6F0E9; border-color:var(--leaf); color:var(--leaf)}
+  .cta{width:100%; background:var(--accent); color:#fff; border:none; border-radius:16px; padding:16px;
+       font-family:'Jua',sans-serif; font-size:18px; box-shadow:0 4px 0 rgba(0,0,0,.12); cursor:pointer}
+  .cta:disabled{background:var(--soft); box-shadow:none}
+  .err{margin-top:12px; background:#FBEAE7; color:#B7492F; border-radius:12px; padding:12px; font-size:14px; word-break:break-all}
+  .dish h3{font-family:'Jua',sans-serif; font-size:18px; margin:0 0 4px}
+  .meta{font-size:12px; color:var(--soft); margin-bottom:8px}
+  .health{background:#E6F0E9; color:var(--leaf); border-radius:10px; padding:9px 12px; font-size:13px; margin-bottom:8px}
+  .ings{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px}
+  .ing{background:var(--tint); color:var(--accent); border-radius:8px; padding:4px 9px; font-size:13px}
+  ol.steps{margin:8px 0 0; padding:0; list-style:none}
+  ol.steps li{display:flex; gap:10px; margin-bottom:9px; font-size:14px; line-height:1.5}
+  ol.steps .n{background:var(--accent); color:#fff; border-radius:50%; min-width:22px; height:22px; display:flex;
+        align-items:center; justify-content:center; font-size:12px; font-family:'Jua',sans-serif}
+  .tip{background:var(--tint); border-radius:10px; padding:9px 12px; font-size:13px; font-family:'Gaegu',cursive; margin-top:6px}
+  .src{margin-top:10px; font-size:13px}
+  .src a{color:var(--leaf); word-break:break-all}
+  .dish .actions{display:flex; gap:8px; margin-top:12px}
+  .menuitem{display:flex; align-items:center; gap:10px; background:#fff; border:1px solid var(--line);
+        border-radius:12px; padding:10px 12px; margin-bottom:8px}
+  .menuitem .nm{flex:1; font-size:14.5px}
+  .badge{font-size:11px; border-radius:6px; padding:2px 8px; background:var(--tint); color:var(--accent)}
+  .x{border:none; background:none; color:var(--soft); font-size:16px; cursor:pointer}
+  .srcline{display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13px}
+  .srcline a{color:var(--leaf); flex:1; word-break:break-all; text-decoration:none}
+  .srcline span.plain{flex:1}
+  .footer{text-align:center; color:var(--soft); font-size:12px; font-family:'Gaegu',cursive; line-height:1.7; margin:24px 0}
+  .nav{position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1.5px solid var(--line);
+       display:flex; padding-bottom:env(safe-area-inset-bottom); z-index:10}
+  .nav button{flex:1; border:none; background:none; padding:10px 0 8px; font-family:inherit; color:var(--soft); font-size:11px; cursor:pointer}
+  .nav button .ni{display:block; font-size:22px; margin-bottom:2px}
+  .nav button.on{color:var(--accent); font-family:'Jua',sans-serif}
+  .tab{display:none} .tab.show{display:block}
+  .spin{display:inline-block; animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .in{animation:rise .4s cubic-bezier(.2,.7,.3,1) both}
+  @keyframes rise{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
+  @media (prefers-reduced-motion:reduce){.in,.spin{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">오늘 뭐 해먹지?</div>
+  <h1>우리집 냉장고 식단 도우미</h1>
+  <p class="sub">재료를 골라 누르면, 믿을 수 있는 출처를 바탕으로 건강한 식단을 추천해요</p>
+
+  <!-- ── 홈(추천) 탭 ─────────────────────────── -->
+  <div id="tab-home" class="tab show">
+    <div class="board">
+      <div class="stitle"><span>🧲 내 재료 저장고</span>
+        <button class="btn ghost" id="editBtn" onclick="toggleEdit()">편집</button></div>
+      <div class="hint" id="pantryHint"></div>
+      <div class="chips" id="pantry"></div>
+      <div class="row">
+        <input id="newIng" placeholder="새 재료 등록 (예: 소고기) · 쉼표로 여러 개" enterkeyhint="done">
+        <button class="btn green" onclick="addIng()">등록</button>
+      </div>
+    </div>
+
+    <div class="cats" id="cats"></div>
+    <div class="stagebox" id="stagebox" style="display:none">
+      <div class="hint" style="margin-bottom:8px">아이 개월수에 맞는 단계를 골라주세요</div>
+      <div class="stages" id="stages"></div>
+    </div>
+    <button class="toggle on" id="healthyBtn" onclick="toggleHealthy()">🥗 <b style="font-family:'Jua'">건강식 우선</b>&nbsp;켜짐</button>
+    <button class="cta" id="goBtn" onclick="recommend()">🍚 유아식 추천받기</button>
+    <div id="error"></div>
+    <div id="results" style="margin-top:16px"></div>
+    <div id="grounded"></div>
+  </div>
+
+  <!-- ── 내 메뉴 탭 ──────────────────────────── -->
+  <div id="tab-menu" class="tab">
+    <div class="card">
+      <div class="stitle">📒 내 메뉴</div>
+      <div class="hint">자주 먹는 음식을 직접 추가하거나, 추천에서 ★로 저장하세요 · 이 폰에 계속 저장돼요</div>
+      <div class="row" style="margin-top:4px">
+        <select id="menuCat" style="width:110px"></select>
+        <input id="menuName" placeholder="예: 소고기미역국" enterkeyhint="done">
+        <button class="btn green" onclick="addMenu()">추가</button>
+      </div>
+    </div>
+    <div id="menuList"></div>
+  </div>
+
+  <!-- ── 설정 탭 ────────────────────────────── -->
+  <div id="tab-set" class="tab">
+    <div class="card">
+      <div class="stitle">🔑 Gemini API 키</div>
+      <div class="hint">한 번 저장하면 이 폰에 계속 저장돼요. 키는 이 기기 밖으로 나가지 않아요(구글 API 호출에만 사용).<br>
+        발급: <a href="https://aistudio.google.com" target="_blank" style="color:var(--leaf)">aistudio.google.com</a> → Get API key (무료)</div>
+      <div class="row" style="margin-top:4px">
+        <input id="apiKey" type="password" placeholder="AIza... 키 붙여넣기">
+        <button class="btn green" onclick="saveKey()">저장</button>
+      </div>
+      <div class="hint" id="keyStatus" style="margin-top:8px"></div>
+      <div class="row">
+        <select id="modelSel">
+          <option value="gemini-2.5-flash">gemini-2.5-flash (기본)</option>
+          <option value="gemini-3.5-flash">gemini-3.5-flash</option>
+          <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stitle">📚 출처 라이브러리</div>
+      <div class="hint">추천이 우선 참고할 유튜브·책·기관 — 이 폰에 저장돼요.</div>
+      <div id="srcTabs" style="display:flex; gap:6px; margin-bottom:10px"></div>
+      <div id="srcList"></div>
+      <div class="row">
+        <input id="srcName" placeholder="이름 (예: OO요리 유튜브)">
+      </div>
+      <div class="row">
+        <input id="srcUrl" placeholder="URL (선택)">
+        <button class="btn green" onclick="addSrc()">추가</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stitle">🧹 데이터</div>
+      <div class="hint">모든 데이터(키·재료·메뉴·출처)는 이 폰 브라우저에만 저장돼요. 브라우저 데이터를 지우면 함께 지워져요.</div>
+      <button class="btn ghost" onclick="resetAll()">전체 초기화</button>
+    </div>
+  </div>
+
+  <div class="footer">AI 추천이라 재료·간·질감은 아이에게 맞게 한 번 더 확인해 주세요.<br>
+    12개월 미만은 꿀·소금·설탕을 피하고, 새 재료는 하나씩 천천히요.</div>
+</div>
+
+<nav class="nav">
+  <button id="nav-home" class="on" onclick="go('home')"><span class="ni">🍳</span>추천</button>
+  <button id="nav-menu" onclick="go('menu')"><span class="ni">📒</span>내 메뉴</button>
+  <button id="nav-set" onclick="go('set')"><span class="ni">⚙️</span>설정</button>
+</nav>
+
+<script>
+// ── 상태 + 폰 저장(localStorage) ─────────────────────────────
+const CATS = {
+  "유아식": {emoji:"🍚", sub:"이유식·아이밥"},
+  "어른식": {emoji:"🍲", sub:"한 끼 식사"},
+  "간식":   {emoji:"🍪", sub:"온 가족 간식"},
+};
+const STAGES = ["초기 (4~6개월)","중기 (7~8개월)","후기 (9~11개월)","완료기 (12~15개월)","유아식 (16개월~)"];
+const SEED_PANTRY = ["계란","밥","두부","당근","감자","양파","애호박","김","멸치","치즈","우유","바나나","시금치","닭가슴살","브로콜리","고구마"];
+const SEED_SOURCES = {
+  "유아식":[
+    {name:"질병관리청 국가건강정보포털(이유식·영유아 영양)", url:"https://health.kdca.go.kr"},
+    {name:"도서 『안심 튼튼 이유식』", url:""},
+    {name:"도서 『하하하 유아식』", url:""},
+    {name:"유튜브: 소아과 의사 채널(우리어린이)", url:"https://www.youtube.com/@woorikidss"},
+  ],
+  "어른식":[
+    {name:"만개의레시피(영양사 식단)", url:"https://www.10000recipe.com"},
+    {name:"우리의식탁 wtable", url:"https://wtable.co.kr"},
+    {name:"새미네부엌", url:"https://semie.cooking"},
+  ],
+  "간식":[
+    {name:"우리의식탁 wtable", url:"https://wtable.co.kr"},
+    {name:"만개의레시피", url:"https://www.10000recipe.com"},
+  ],
+};
+function load(k, d){ try{ const v = localStorage.getItem("mp_"+k); return v===null ? d : JSON.parse(v); }catch(e){ return d; } }
+function save(k, v){ try{ localStorage.setItem("mp_"+k, JSON.stringify(v)); }catch(e){} }
+
+let S = {
+  key: load("key",""), model: load("model","gemini-2.5-flash"),
+  pantry: load("pantry", SEED_PANTRY.slice()),
+  selected: load("selected", []),
+  sources: load("sources", JSON.parse(JSON.stringify(SEED_SOURCES))),
+  menus: load("menus", []),
+  cat: load("cat","유아식"), stage: load("stage", STAGES[2]), healthy: load("healthy", true),
+  edit:false, srcTab:"유아식", results:[], groundedList:[], loading:false,
+};
+
+// ── 탭 ──────────────────────────────────────────────────────
+function go(t){
+  ["home","menu","set"].forEach(x=>{
+    document.getElementById("tab-"+x).classList.toggle("show", x===t);
+    document.getElementById("nav-"+x).classList.toggle("on", x===t);
+  });
+  window.scrollTo({top:0});
+}
+
+// ── 재료 저장고 ──────────────────────────────────────────────
+function renderPantry(){
+  const box = document.getElementById("pantry");
+  box.innerHTML = "";
+  S.pantry.forEach(ing=>{
+    const b = document.createElement("button");
+    const on = S.selected.includes(ing);
+    b.className = "chip" + (S.edit ? " del" : on ? " on" : "");
+    b.textContent = S.edit ? ing+" ✕" : (on ? "✓ "+ing : ing);
+    b.onclick = ()=>{
+      if(S.edit){
+        S.pantry = S.pantry.filter(x=>x!==ing);
+        S.selected = S.selected.filter(x=>x!==ing);
+        save("pantry",S.pantry); save("selected",S.selected);
+      }else{
+        S.selected = on ? S.selected.filter(x=>x!==ing) : [...S.selected, ing];
+        save("selected",S.selected);
+      }
+      renderPantry();
+    };
+    box.appendChild(b);
+  });
+  document.getElementById("pantryHint").textContent =
+    S.edit ? "✕ 를 눌러 저장고에서 빼요" : `눌러서 오늘 쓸 재료를 고르세요 · 선택 ${S.selected.length}개 · 이 폰에 계속 저장돼요`;
+  document.getElementById("editBtn").textContent = S.edit ? "완료" : "편집";
+}
+function toggleEdit(){ S.edit=!S.edit; renderPantry(); }
+function addIng(){
+  const el = document.getElementById("newIng");
+  const items = el.value.split(/[,\n]/).map(s=>s.trim()).filter(Boolean);
+  items.forEach(it=>{
+    if(!S.pantry.includes(it)) S.pantry.push(it);
+    if(!S.selected.includes(it)) S.selected.push(it);
+  });
+  el.value="";
+  save("pantry",S.pantry); save("selected",S.selected);
+  renderPantry();
+}
+document.getElementById("newIng").addEventListener("keydown",e=>{ if(e.key==="Enter") addIng(); });
+
+// ── 카테고리 / 단계 / 건강식 ─────────────────────────────────
+function renderCats(){
+  const box = document.getElementById("cats"); box.innerHTML="";
+  Object.keys(CATS).forEach(k=>{
+    const d = document.createElement("button");
+    d.className = "cat" + (S.cat===k ? " on":"");
+    d.innerHTML = `<div class="e">${CATS[k].emoji}</div><div class="l">${k}</div><div class="s">${CATS[k].sub}</div>`;
+    d.onclick = ()=>{ S.cat=k; save("cat",k); renderCats(); };
+    box.appendChild(d);
+  });
+  document.getElementById("stagebox").style.display = S.cat==="유아식" ? "block":"none";
+  document.getElementById("goBtn").textContent = `${CATS[S.cat].emoji} ${S.cat} 추천받기`;
+  renderStages();
+}
+function renderStages(){
+  const box = document.getElementById("stages"); box.innerHTML="";
+  STAGES.forEach(st=>{
+    const b = document.createElement("button");
+    b.className = "stage" + (S.stage===st ? " on":"");
+    b.textContent = st;
+    b.onclick = ()=>{ S.stage=st; save("stage",st); renderStages(); };
+    box.appendChild(b);
+  });
+}
+function toggleHealthy(){
+  S.healthy=!S.healthy; save("healthy",S.healthy);
+  const b = document.getElementById("healthyBtn");
+  b.className = "toggle" + (S.healthy?" on":"");
+  b.innerHTML = (S.healthy?"🥗":"🍽️") + ` <b style="font-family:'Jua'">건강식 우선</b>&nbsp;` + (S.healthy?"켜짐":"꺼짐");
+}
+
+// ── Gemini 호출 (검색 grounding) ─────────────────────────────
+function buildPrompt(){
+  const srcNames = (S.sources[S.cat]||[]).map(s=>s.name).join(" / ") || "신뢰할 수 있는 요리·영양 자료";
+  let base = `당신은 한국 가정식과 이유식에 능숙한 다정한 요리 도우미입니다.\n집에 있는 재료: ${S.selected.join(", ")}.\n기본 양념(소금·간장·참기름·물·기름)과 주식은 필요하면 더 써도 됩니다.`;
+  let inst;
+  if(S.cat==="유아식") inst = `위 재료로 만들 수 있는 "${S.stage}" 단계 이유식/유아식 3가지를 추천해줘.\n- 단계에 맞는 농도·입자 크기를 지켜줘.\n- 12개월 미만에게는 꿀·소금·설탕을 절대 쓰지 마. 간은 최소화.`;
+  else if(S.cat==="어른식") inst = `위 재료로 20~30분 안에 되는 건강한 어른 한 끼 3가지를 추천해줘. 고단백·채소 위주로 다양하게.`;
+  else inst = `위 재료로 아이와 어른이 함께 즐길 간단한 간식 3가지를 추천해줘. 너무 달지 않게.`;
+  const grounding = `\n\n[출처] 다음 같은 신뢰할 수 있는 곳을 우선으로 웹 검색해서 참고해줘: ${srcNames}. 각 요리마다 실제로 검색된 원본 레시피/자료 URL을 하나씩 source_url 에 넣어줘. 레시피 문장은 저작권을 위해 반드시 네 말로 새로 요약하고 그대로 베끼지 마.`;
+  const health = S.healthy ? `\n\n[건강식 우선] 영양 균형 최우선: 신선한 채소·통곡물·양질의 단백질을 쓰고 튀김·과한 나트륨·설탕은 피해줘.` : "";
+  const fmt = `\n\n반드시 아래 JSON 배열로만 답하고 다른 말·마크다운·코드펜스는 넣지 마.\n[{"name":"요리 이름","emoji":"🍳","time":"약 15분","difficulty":"쉬움","ingredients":["재료1"],"steps":["1) 짧게"],"tip":"한 줄 팁","health":"건강 포인트 한 줄","source_title":"참고 자료 이름","source_url":"https://..."}]\n- 정확히 3개. steps는 3~5단계, 각 단계 한 문장.`;
+  return base+"\n\n"+inst+grounding+health+fmt;
+}
+async function recommend(){
+  const err = document.getElementById("error");
+  err.innerHTML=""; 
+  if(!S.key){ err.innerHTML = `<div class="err">먼저 ⚙️설정 탭에서 Gemini API 키를 저장해 주세요.</div>`; go("set"); return; }
+  if(!S.selected.length){ err.innerHTML = `<div class="err">재료 저장고에서 오늘 쓸 재료를 골라주세요.</div>`; return; }
+  const btn = document.getElementById("goBtn");
+  btn.disabled = true; btn.innerHTML = `<span class="spin">🍳</span> 출처를 검색하며 요리 고민 중…`;
+  document.getElementById("results").innerHTML=""; document.getElementById("grounded").innerHTML="";
+  try{
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(S.model)}:generateContent?key=${encodeURIComponent(S.key)}`;
+    const res = await fetch(url,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        contents:[{parts:[{text: buildPrompt()}]}],
+        tools:[{google_search:{}}],
+        generationConfig:{temperature:1.0}
+      })
+    });
+    if(!res.ok){
+      const t = await res.text();
+      throw new Error(`HTTP ${res.status} — ${t.slice(0,180)}`);
+    }
+    const data = await res.json();
+    const parts = (data.candidates?.[0]?.content?.parts)||[];
+    const text = parts.map(p=>p.text||"").join("");
+    const s = text.indexOf("["), e = text.lastIndexOf("]");
+    if(s<0||e<0) throw new Error("응답 형식 오류 — 다시 시도해 주세요.");
+    S.results = JSON.parse(text.slice(s,e+1));
+    const chunks = (data.candidates?.[0]?.groundingMetadata?.groundingChunks)||[];
+    S.groundedList = chunks.filter(c=>c.web).map(c=>({title:c.web.title||c.web.uri, url:c.web.uri}));
+    // source_url 이 비면 grounding 결과로 보완
+    S.results.forEach((d,i)=>{ if(!d.source_url && S.groundedList[i]) { d.source_url = S.groundedList[i].url; d.source_title = d.source_title || S.groundedList[i].title; } });
+    renderResults();
+  }catch(ex){
+    err.innerHTML = `<div class="err">추천을 불러오지 못했어요. 재료를 줄이거나 다시 시도해 주세요.<br><small>${String(ex.message||ex).replace(/</g,"&lt;")}</small></div>`;
+  }finally{
+    btn.disabled=false; btn.textContent = `${CATS[S.cat].emoji} ${S.cat} 추천받기`;
+  }
+}
+function renderResults(){
+  const box = document.getElementById("results"); box.innerHTML="";
+  S.results.forEach((d,idx)=>{
+    const saved = S.menus.some(m=>m.name===d.name);
+    const el = document.createElement("div");
+    el.className = "card dish in"; el.style.animationDelay = (idx*0.08)+"s";
+    const steps = (d.steps||[]).map((s,k)=>`<li><span class="n">${k+1}</span><span>${String(s).replace(/^\d+\)\s*/,"")}</span></li>`).join("");
+    el.innerHTML = `
+      <h3>${d.emoji||"🍽️"} ${d.name||"요리"}</h3>
+      <div class="meta">${[d.time,d.difficulty].filter(Boolean).join(" · ")}</div>
+      ${d.health?`<div class="health">🥗 ${d.health}</div>`:""}
+      ${(d.ingredients&&d.ingredients.length)?`<div class="ings">${d.ingredients.map(i=>`<span class="ing">${i}</span>`).join("")}</div>`:""}
+      <ol class="steps">${steps}</ol>
+      ${d.tip?`<div class="tip">💡 ${d.tip}</div>`:""}
+      ${d.source_url?`<div class="src">🔎 <b>출처:</b> <a href="${d.source_url}" target="_blank" rel="noopener">${d.source_title||"원본 보기"}</a></div>`:""}
+      <div class="actions"><button class="btn ghost" onclick="saveDish(${idx})">${saved?"★ 저장됨":"☆ 내 메뉴에 저장"}</button></div>`;
+    box.appendChild(el);
+  });
+  if(S.groundedList.length){
+    document.getElementById("grounded").innerHTML =
+      `<div class="card"><div class="stitle">🔗 이번 추천이 참고한 검색 출처</div>` +
+      S.groundedList.map(g=>`<div class="srcline"><a href="${g.url}" target="_blank" rel="noopener">· ${g.title}</a></div>`).join("") +
+      `<div class="hint" style="margin-top:6px">참고용 정보예요. 아이 건강은 소아과 상담을 우선하세요.</div></div>`;
+  }
+}
+function saveDish(idx){
+  const d = S.results[idx];
+  if(!S.menus.some(m=>m.name===d.name)){
+    S.menus.push({name:d.name, cat:S.cat, emoji:d.emoji||"🍽️", source_url:d.source_url||""});
+    save("menus",S.menus);
+  }
+  renderResults(); renderMenus();
+}
+
+// ── 내 메뉴 ─────────────────────────────────────────────────
+function renderMenus(){
+  const sel = document.getElementById("menuCat");
+  if(!sel.options.length) Object.keys(CATS).forEach(k=>{ const o=document.createElement("option"); o.value=k; o.textContent=CATS[k].emoji+" "+k; sel.appendChild(o); });
+  const box = document.getElementById("menuList"); box.innerHTML="";
+  if(!S.menus.length){ box.innerHTML = `<div class="hint" style="text-align:center; padding:10px">아직 저장한 메뉴가 없어요.</div>`; return; }
+  S.menus.forEach((m,i)=>{
+    const el = document.createElement("div"); el.className="menuitem";
+    el.innerHTML = `<span style="font-size:20px">${m.emoji||"🍽️"}</span>
+      <span class="nm">${m.name}${m.source_url?` · <a href="${m.source_url}" target="_blank" rel="noopener" style="color:var(--leaf); font-size:12px">출처</a>`:""}</span>
+      <span class="badge">${m.cat||""}</span>
+      <button class="x" aria-label="삭제">✕</button>`;
+    el.querySelector(".x").onclick = ()=>{ S.menus.splice(i,1); save("menus",S.menus); renderMenus(); };
+    box.appendChild(el);
+  });
+}
+function addMenu(){
+  const nm = document.getElementById("menuName");
+  const name = nm.value.trim(); if(!name) return;
+  const cat = document.getElementById("menuCat").value;
+  if(!S.menus.some(m=>m.name===name)){
+    S.menus.push({name, cat, emoji:CATS[cat].emoji, source_url:""});
+    save("menus",S.menus);
+  }
+  nm.value=""; renderMenus();
+}
+document.getElementById("menuName").addEventListener("keydown",e=>{ if(e.key==="Enter") addMenu(); });
+
+// ── 설정: 키 / 모델 / 출처 라이브러리 ─────────────────────────
+function saveKey(){
+  const v = document.getElementById("apiKey").value.trim();
+  if(!v){ return; }
+  S.key = v; save("key", v);
+  renderKeyStatus();
+}
+function renderKeyStatus(){
+  document.getElementById("keyStatus").innerHTML = S.key
+    ? `✅ 키가 이 폰에 저장돼 있어요 (끝 4자리: …${S.key.slice(-4)}). 다시 등록할 필요 없어요.`
+    : `아직 키가 없어요. 위에 붙여넣고 저장을 눌러주세요.`;
+}
+document.getElementById("modelSel").addEventListener("change",e=>{ S.model=e.target.value; save("model",S.model); });
+
+function renderSrcTabs(){
+  const box = document.getElementById("srcTabs"); box.innerHTML="";
+  Object.keys(CATS).forEach(k=>{
+    const b=document.createElement("button");
+    b.className = "stage" + (S.srcTab===k?" on":"");
+    b.textContent = CATS[k].emoji+" "+k;
+    b.onclick=()=>{ S.srcTab=k; renderSrcTabs(); renderSrcList(); };
+    box.appendChild(b);
+  });
+}
+function renderSrcList(){
+  const box = document.getElementById("srcList"); box.innerHTML="";
+  const arr = S.sources[S.srcTab]||[];
+  if(!arr.length) box.innerHTML = `<div class="hint">아직 출처가 없어요. 아래에서 추가해 주세요.</div>`;
+  arr.forEach((s,i)=>{
+    const el=document.createElement("div"); el.className="srcline";
+    el.innerHTML = (s.url?`<a href="${s.url}" target="_blank" rel="noopener">· ${s.name}</a>`:`<span class="plain">· ${s.name}</span>`) + `<button class="x">✕</button>`;
+    el.querySelector(".x").onclick=()=>{ arr.splice(i,1); save("sources",S.sources); renderSrcList(); };
+    box.appendChild(el);
+  });
+}
+function addSrc(){
+  const nm=document.getElementById("srcName"), ur=document.getElementById("srcUrl");
+  if(!nm.value.trim()) return;
+  (S.sources[S.srcTab]=S.sources[S.srcTab]||[]).push({name:nm.value.trim(), url:ur.value.trim()});
+  save("sources",S.sources);
+  nm.value=""; ur.value=""; renderSrcList();
+}
+function resetAll(){
+  if(!confirm("모든 데이터(키·재료·메뉴·출처)를 지울까요?")) return;
+  Object.keys(localStorage).filter(k=>k.startsWith("mp_")).forEach(k=>localStorage.removeItem(k));
+  location.reload();
+}
+
+// ── 초기화 ──────────────────────────────────────────────────
+document.getElementById("apiKey").value = S.key;
+document.getElementById("modelSel").value = S.model;
+toggleHealthy(); toggleHealthy(); // 저장된 값 기준으로 표시 동기화
+renderPantry(); renderCats(); renderMenus(); renderSrcTabs(); renderSrcList(); renderKeyStatus();
+</script>
+</body>
+</html>
