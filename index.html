@@ -191,7 +191,7 @@
 
     <div class="card">
       <div class="stitle">📚 출처 라이브러리 <button class="iinfo" onclick="showInfo('sources')" aria-label="설명">ⓘ</button></div>
-      <div class="hint">추천이 우선 참고할 유튜브·책·기관 — 이 폰에 저장돼요.</div>
+      <div class="hint">추천이 최우선 참고할 유튜브·책·기관 — 이 폰에 저장돼요.<br>💡 정확도 팁: 채널 메인보다 <b>특정 영상·레시피 URL</b>을 넣으면 AI가 그 내용을 직접 읽어요.</div>
       <div id="srcTabs" style="display:flex; gap:6px; margin-bottom:10px"></div>
       <div id="srcList"></div>
       <div class="row">
@@ -306,10 +306,13 @@ const INFO = {
     <p>위의 정렬 버튼을 누르면 그 기준의 높은 점수 순으로 🥇🥈🥉 순위가 바뀌어요.</p>
     <p>단, 이 점수는 <b>AI의 판단이라 참고용</b>이에요. 절대적인 수치가 아니니 최종 선택은 직접 해주세요.</p>`},
   sources: {t:"📚 출처 라이브러리", b:`
-    <p>추천할 때 AI가 <b>우선 참고할 곳</b>(유튜브 채널·책·기관)을 등록하는 곳이에요. 카테고리(유아식/어른식/간식)별로 따로 관리돼요.</p>
-    <p><b>동작 방식:</b> 추천을 누르면 AI가 여기 등록된 이름들을 힌트 삼아 <b>구글 검색</b>을 해요. 그래서 URL 페이지를 통째로 읽는 게 아니라, 검색에 걸리는 그 출처의 개별 글·영상들을 참고해요.</p>
-    <p><b>팁:</b> URL보다 <b>이름이 더 중요해요.</b> "OOO 유튜브 이유식 레시피"처럼 실제 검색어스럽게 구체적으로 적을수록 잘 잡혀요. URL은 내가 그 출처로 바로 이동하는 링크 용도예요.</p>
-    <p>믿는 채널·책으로 채워둘수록 추천의 근거가 좋아져요. 이 목록도 폰에 계속 저장돼요.</p>`},
+    <p>추천할 때 AI가 <b>최우선으로 참고할 곳</b>(유튜브·책·기관)을 등록하는 곳이에요. 카테고리별로 따로 관리돼요.</p>
+    <p><b>동작:</b> 등록한 채널/인물을 기준으로 ① 그 사람이 이 재료로 만든 요리를 찾고 → ② 레시피를 파악하고 → ③ 부족하면 같은 요리의 블로그·레시피 사이트를 추가로 찾아 → ④ 종합·보완해서 그 사람 스타일로 추천해요. 각 요리 아래 <b>🧩 참고 흐름</b>에 어떻게 종합했는지 보여줘요.</p>
+    <p><b>정확도 올리는 법 (효과 순):</b><br>
+    <b>① 취향 맞는 채널을 이름+URL로 등록</b> — 구독 중인 채널을 넣으면 그 사람 요리를 우선 찾아요.<br>
+    <b>② 글로 잘 정리된 URL이 더 정확</b> — 영상은 설명란만 읽혀요. 레시피 글(만개의레시피·블로그) URL이 재료·분량·순서까지 정확히 반영돼요.<br>
+    <b>③ 지시문 커스텀 병행</b> — 설정 🧠에서 "OOO 스타일로"를 덧붙이면 말투·방식까지 기울어요.</p>
+    <p><b>역할 나누기 팁:</b> 맛·조리법은 좋아하는 채널, 영양·안전 근거는 질병관리청·식약처 같은 공공기관 — 섞으면 신뢰도가 가장 좋아요.</p>`},
   mymenu: {t:"📒 내 메뉴", b:`
     <p>우리집 <b>단골 음식 노트</b>예요. 두 가지로 채워져요:</p>
     <p>① 추천 결과에서 <b>☆를 누르면</b> 저장돼요. 출처 링크도 함께 저장돼서 나중에 만드는 법을 다시 열어볼 수 있어요.<br>
@@ -460,14 +463,27 @@ function toggleHealthy(){
 
 // ── Gemini 호출 (검색 grounding) ─────────────────────────────
 function buildPrompt(){
-  const srcNames = (S.sources[S.cat]||[]).map(s=>s.name).join(" / ") || "신뢰할 수 있는 요리·영양 자료";
+  const srcObjs = (S.sources[S.cat]||[]);
+  const srcNames = srcObjs.map(s=>s.name).join(" / ") || "신뢰할 수 있는 요리·영양 자료";
+  const srcUrls = srcObjs.map(s=>s.url).filter(u=>/^https?:\/\//.test(u));
   let base = `당신은 한국 가정식과 이유식에 능숙한 다정한 요리 도우미입니다.\n집에 있는 재료: ${S.selected.join(", ")}.\n기본 양념(소금·간장·참기름·물·기름)과 주식은 필요하면 더 써도 됩니다.`;
   if(S.dislikes && S.dislikes.length) base += `\n[제외 재료 — 반드시 지킬 것] 다음 재료는 알레르기·비선호로 절대 사용하지 마: ${S.dislikes.join(", ")}. 필요하면 다른 재료로 대체해.`;
   let inst = P(S.cat).replace(/\{단계\}/g, S.stage);
   if(S.cat==="유아식") inst += `\n(안전 규칙 — 항상 적용: 12개월 미만 꿀·소금·설탕 금지, 간 최소화, 단계에 맞는 농도·입자 크기 준수)`;
-  const grounding = `\n\n[출처] 다음 같은 신뢰할 수 있는 곳을 우선으로 웹 검색해서 참고해줘: ${srcNames}. 각 요리마다 실제로 검색된 원본 레시피/자료 URL을 하나씩 source_url 에 넣어줘. 레시피 문장은 저작권을 위해 반드시 네 말로 새로 요약하고 그대로 베끼지 마.`;
+  let grounding = `\n\n[출처 활용 순서 — 매우 중요] 아래 등록된 출처를 이 순서로 활용해줘.\n`;
+  grounding += `등록된 출처: ${srcNames}.`;
+  if(srcUrls.length) grounding += `\n출처 URL(내용을 실제로 열어 읽을 것): ${srcUrls.join(", ")}.`;
+  grounding += `
+1) 먼저 등록된 채널/인물이 위 재료로 만든 요리가 있는지 그 채널 기준으로 검색해 찾아줘.
+2) 그 요리의 레시피(재료·분량·순서)를 파악해줘. 채널 정보가 부족하면,
+3) 같은 요리를 다룬 블로그·레시피 사이트(만개의레시피 등)를 추가로 찾아 내용을 보완해줘.
+4) 위 정보를 종합해 그 사람 스타일을 살리되 정확한 레시피로 추천해줘.
+- source_url 에는 실제로 참고한 원본 URL을 넣고, sourced_from(참고 흐름)에서 언급한 모든 자료의 링크를 refs 배열에 {title,url}로 각각 넣어줘(영상·블로그 등 참고한 것 전부).
+- [링크 규칙] URL은 반드시 검색으로 실제 확인한 것만 넣어. 존재를 확신 못 하면 그 링크는 넣지 말고, 추측으로 URL을 지어내지 마.
+- 등록된 출처에서 도저히 못 찾을 때만 다른 신뢰할 만한 자료를 써.
+- 레시피 문장은 저작권을 위해 네 말로 요약하고 그대로 베끼지 마.`;
   const health = S.healthy ? `\n\n`+P("건강식") : "";
-  const fmt = `\n\n반드시 아래 JSON 배열로만 답하고 다른 말·마크다운·코드펜스는 넣지 마.\n[{"name":"요리 이름","emoji":"🍳","time":"약 15분","difficulty":"쉬움","ingredients":["재료1"],"steps":["1) 짧게"],"tip":"한 줄 팁","health":"건강 포인트 한 줄","source_title":"참고 자료 이름","source_url":"https://...","scores":{"use":88,"health":90,"ease":75}}]\n- 정확히 3개. steps는 3~5단계, 각 단계 한 문장.\n- scores는 0~100 정수로 정직하게 채점: use=선택한 재료를 얼마나 많이·핵심적으로 활용하는지, health=영양 균형(채소·단백질·나트륨·당 고려), ease=조리 간편함(시간 짧고 단계·설거지 적을수록 높게). 세 점수가 요리마다 차이 나게 현실적으로.`;
+  const fmt = `\n\n반드시 아래 JSON 배열로만 답하고 다른 말·마크다운·코드펜스는 넣지 마.\n[{"name":"요리 이름","emoji":"🍳","time":"약 15분","difficulty":"쉬움","ingredients":["재료1"],"steps":["1) 짧게"],"tip":"한 줄 팁","health":"건강 포인트 한 줄","source_title":"참고 자료 이름","source_url":"https://...","sourced_from":"어느 채널/글을 어떻게 종합했는지 한 줄","refs":[{"title":"백종원 애호박전 영상","url":"https://..."},{"title":"만개의레시피 애호박전","url":"https://..."}],"scores":{"use":88,"health":90,"ease":75}}]\n- 정확히 3개. steps는 3~5단계, 각 단계 한 문장.\n- scores는 0~100 정수로 정직하게 채점: use=선택한 재료를 얼마나 많이·핵심적으로 활용하는지, health=영양 균형(채소·단백질·나트륨·당 고려), ease=조리 간편함(시간 짧고 단계·설거지 적을수록 높게). 세 점수가 요리마다 차이 나게 현실적으로.`;
   return base+"\n\n"+inst+grounding+health+fmt;
 }
 async function recommend(){
@@ -484,7 +500,7 @@ async function recommend(){
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({
         contents:[{parts:[{text: buildPrompt()}]}],
-        tools:[{google_search:{}}],
+        tools:[{google_search:{}},{url_context:{}}],
         generationConfig:{temperature:1.0}
       })
     });
@@ -518,6 +534,36 @@ async function recommend(){
 }
 function setSort(k){ S.sort=k; save("sort",k); renderResults(); }
 function sc(d,k){ const v = d.scores && Number(d.scores[k]); return Number.isFinite(v) ? Math.max(0,Math.min(100,v)) : null; }
+function renderRefs(d){
+  const grounded = (S.groundedList||[]).filter(r=>r&&/^https?:\/\//.test(r.url));
+  const groundedUrls = new Set(grounded.map(r=>r.url));
+  const host = u=>{ try{ return new URL(u).hostname.replace(/^www\./,""); }catch(_){ return ""; } };
+  const groundedHosts = new Set(grounded.map(r=>host(r.url)).filter(Boolean));
+
+  // AI가 적은 링크들 수집
+  let aiRefs = Array.isArray(d.refs) ? d.refs.filter(r=>r&&/^https?:\/\//.test(r.url)) : [];
+  if(d.source_url && /^https?:\/\//.test(d.source_url) && !aiRefs.some(r=>r.url===d.source_url))
+    aiRefs.unshift({title:d.source_title||"원본", url:d.source_url});
+
+  // 검증됨(검색이 실제로 찾은 것) vs 미확인(AI가 적었지만 검색결과에 없음) 분리
+  const verified=[], unverified=[];
+  aiRefs.forEach(r=>{
+    if(groundedUrls.has(r.url) || groundedHosts.has(host(r.url))) verified.push(r);
+    else unverified.push(r);
+  });
+  // 검색이 찾았지만 AI가 안 쓴 링크도 검증된 쪽에 보태기
+  grounded.forEach(g=>{ if(!verified.some(r=>r.url===g.url) && !aiRefs.some(r=>r.url===g.url)) verified.push(g); });
+
+  const items = [...verified.slice(0,3), ...unverified.slice(0,2)];
+  if(!items.length) return "";
+  const line = r=>{
+    const unsure = unverified.includes(r);
+    return `<div class="srcline" style="margin:4px 0"><a href="${r.url}" target="_blank" rel="noopener">· ${r.title||r.url}${unsure?' <span style="color:#B7492F">(확인 필요)</span>':''}</a></div>`;
+  };
+  return `<div class="src" style="margin-top:6px"><b style="font-size:12.5px">🔗 참고 링크</b>`+
+    items.map(line).join("")+
+    `<div class="hint" style="margin-top:4px; font-size:11px">‘확인 필요’ 표시는 검색으로 확인되지 않은 링크예요. 삭제·비공개면 링크 이름으로 직접 검색해 보세요.</div></div>`;
+}
 function renderResults(){
   const bar = document.getElementById("sortbar");
   const box = document.getElementById("results"); box.innerHTML="";
@@ -553,7 +599,8 @@ function renderResults(){
       ${(d.ingredients&&d.ingredients.length)?`<div class="ings">${d.ingredients.map(i=>`<span class="ing">${i}</span>`).join("")}</div>`:""}
       <ol class="steps">${steps}</ol>
       ${d.tip?`<div class="tip">💡 ${d.tip}</div>`:""}
-      ${d.source_url?`<div class="src">🔎 <b>출처:</b> <a href="${d.source_url}" target="_blank" rel="noopener">${d.source_title||"원본 보기"}</a></div>`:""}
+      ${d.sourced_from?`<div class="src" style="color:var(--soft); font-size:12px">🧩 참고 흐름: ${d.sourced_from}</div>`:""}
+      ${renderRefs(d)}
       <div class="actions"><button class="btn ghost" onclick="saveDish(${origIdx})">${saved?"★ 저장됨":"☆ 내 메뉴에 저장"}</button></div>`;
     box.appendChild(el);
   });
