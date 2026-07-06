@@ -296,6 +296,51 @@ const SEED_SOURCES = {
 };
 function load(k, d){ try{ const v = localStorage.getItem("mp_"+k); return v===null ? d : JSON.parse(v); }catch(e){ return d; } }
 
+// ── 에러를 사람 말로 번역 ─────────────────────────────────────
+function friendlyError(msg){
+  const m = String(msg||"");
+  if(/Failed to fetch|NetworkError|Load failed/i.test(m))
+    return {t:"인터넷 연결이 불안정해요", d:"회사·기관 와이파이면 막혀 있을 수 있어요. 폰 데이터(LTE·5G)로 바꿔서 다시 해보세요."};
+  if(/50[0-9]|high demand|overloaded|UNAVAILABLE/i.test(m))
+    return {t:"지금 이용자가 많아요", d:"구글 AI 서버가 잠시 붐비는 중이에요. 30초쯤 뒤에 다시 눌러주세요."};
+  if(/429|quota|rate|RESOURCE_EXHAUSTED/i.test(m))
+    return {t:"오늘 무료 사용량을 다 썼어요", d:"무료 한도를 넘었어요. 내일 다시 되거나, 설정에서 다른 키를 넣으면 돼요."};
+  if(/400|API key|API_KEY|invalid|PERMISSION|401|403/i.test(m))
+    return {t:"API 키를 확인해 주세요", d:"키가 틀렸거나 만료됐을 수 있어요. 설정 탭에서 키를 다시 저장해 보세요."};
+  if(/형식|JSON|parse|Expected/i.test(m))
+    return {t:"결과를 정리하다 살짝 꼬였어요", d:"재료를 조금 줄이거나 한 번만 다시 눌러주세요."};
+  return {t:"잠시 문제가 있었어요", d:"한 번만 다시 시도해 주세요. 계속되면 조금 뒤에 열어주세요."};
+}
+function errorBox(msg){
+  const e = friendlyError(msg);
+  return `<div class="err"><b>${e.t}</b><br>${e.d}</div>`;
+}
+
+// ── 유사 재료 감지 (표기 차이 합치기) ─────────────────────────
+const SYNONYM_GROUPS = [
+  ["낫또","나또","낫토","나토"],
+  ["달걀","계란"],
+  ["대파","파"],
+  ["돼지고기","돈육"],
+  ["소고기","쇠고기","우육"],
+  ["토마토","방울토마토"],
+  ["새우","대하"],
+];
+function normIng(s){ return String(s).toLowerCase().replace(/\s|·/g,""); }
+function similarIngredient(name, list){
+  const n = normIng(name);
+  // 1) 동의어 그룹
+  const grp = SYNONYM_GROUPS.find(g=>g.map(normIng).includes(n));
+  if(grp){ const hit=list.find(x=>grp.map(normIng).includes(normIng(x))); if(hit) return hit; }
+  // 2) 표기 근접(받침·글자 하나 차이)
+  for(const x of list){
+    const m=normIng(x);
+    if(m===n) return x;
+    if(Math.abs(m.length-n.length)<=1 && (m.includes(n)||n.includes(m)) && Math.min(m.length,n.length)>=2) return x;
+  }
+  return null;
+}
+
 // ── 기능 설명 ────────────────────────────────────────────────
 const INFO = {
   pantry: {t:"🧲 내 재료 저장고", b:`
@@ -448,7 +493,13 @@ function addIng(){
   const el = document.getElementById("newIng");
   const items = el.value.split(/[,\n]/).map(s=>s.trim()).filter(Boolean);
   items.forEach(it=>{
-    if(!S.pantry.includes(it)) S.pantry.push(it);
+    if(S.pantry.includes(it)){ if(!S.selected.includes(it)) S.selected.push(it); return; }
+    const sim = similarIngredient(it, S.pantry);
+    if(sim && sim!==it){
+      const keep = confirm(`'${sim}'와(과) 비슷해요. 같은 재료로 볼까요?\n\n확인 = '${sim}' 사용 (중복 안 만듦)\n취소 = '${it}' 따로 추가`);
+      if(keep){ if(!S.selected.includes(sim)) S.selected.push(sim); return; }
+    }
+    S.pantry.push(it);
     if(!S.selected.includes(it)) S.selected.push(it);
   });
   el.value="";
@@ -494,7 +545,7 @@ function buildPrompt(){
   const srcObjs = (S.sources[S.cat]||[]);
   const srcNames = srcObjs.map(s=>s.name).join(" / ") || "신뢰할 수 있는 요리·영양 자료";
   const srcUrls = srcObjs.map(s=>s.url).filter(u=>/^https?:\/\//.test(u));
-  let base = `당신은 한국 가정식과 이유식에 능숙한 다정한 요리 도우미입니다.\n집에 있는 재료: ${S.selected.join(", ")}.\n기본 양념(소금·간장·참기름·물·기름)과 주식은 필요하면 더 써도 됩니다.`;
+  let base = `당신은 한국 가정식과 이유식에 능숙한 다정한 요리 도우미입니다.\n집에 있는 재료: ${S.selected.join(", ")}.\n(표기가 다른 같은 재료는 하나로 취급해줘 — 예: 낫또=나또=낫토, 계란=달걀, 대파=파.)\n기본 양념(소금·간장·참기름·물·기름)과 주식은 필요하면 더 써도 됩니다.`;
   if(S.dislikes && S.dislikes.length) base += `\n[제외 재료 — 반드시 지킬 것] 다음 재료는 알레르기·비선호로 절대 사용하지 마: ${S.dislikes.join(", ")}. 필요하면 다른 재료로 대체해.`;
   let inst = P(S.cat).replace(/\{단계\}/g, S.stage);
   if(S.cat==="유아식") inst += `\n(안전 규칙 — 항상 적용: 12개월 미만 꿀·소금·설탕 금지, 간 최소화, 단계에 맞는 농도·입자 크기 준수)`;
@@ -548,14 +599,7 @@ async function recommend(){
     S.results.forEach((d,i)=>{ if(!d.source_url && S.groundedList[i]) { d.source_url = S.groundedList[i].url; d.source_title = d.source_title || S.groundedList[i].title; } });
     renderResults();
   }catch(ex){
-    const msg = String(ex.message||ex);
-    const net = /Failed to fetch|NetworkError|Load failed/i.test(msg);
-    err.innerHTML = net
-      ? `<div class="err"><b>인터넷 연결 문제로 구글 서버에 닿지 못했어요.</b><br>
-         · 회사·기관 네트워크라면 외부 AI 접속이 차단됐을 수 있어요 → <b>폰의 LTE/5G로</b> 시도해 보세요.<br>
-         · 광고차단 확장을 쓰면 잠시 끄거나 시크릿 창에서 열어보세요.<br>
-         · 그래도 안 되면 잠시 후 다시 시도해 주세요.</div>`
-      : `<div class="err">추천을 불러오지 못했어요. 재료를 줄이거나 다시 시도해 주세요.<br><small>${msg.replace(/</g,"&lt;")}</small></div>`;
+    err.innerHTML = errorBox(ex.message||ex);
   }finally{
     btn.disabled=false; btn.textContent = `${CATS[S.cat].emoji} ${S.cat} 추천받기`;
   }
@@ -711,13 +755,7 @@ async function recommendWeek(){
     save("week",S.week);
     renderWeek();
   }catch(ex){
-    const msg = String(ex.message||ex);
-    const net = /Failed to fetch|NetworkError|Load failed/i.test(msg);
-    err.innerHTML = net
-      ? `<div class="err"><b>인터넷 연결 문제로 구글 서버에 닿지 못했어요.</b><br>
-         · 회사·기관 네트워크라면 외부 AI 접속이 차단됐을 수 있어요 → <b>폰의 LTE/5G로</b> 시도해 보세요.<br>
-         · 광고차단 확장을 쓰면 잠시 끄거나 시크릿 창에서 열어보세요.</div>`
-      : `<div class="err">식단표를 만들지 못했어요. 다시 시도해 주세요.<br><small>${msg.replace(/</g,"&lt;")}</small></div>`;
+    err.innerHTML = errorBox(ex.message||ex);
   }finally{
     btn.disabled=false; btn.textContent="📅 1주일 식단표 만들기";
   }
