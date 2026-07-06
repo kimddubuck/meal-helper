@@ -611,14 +611,16 @@ async function recommendWeek(){
   try{
     const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(S.model)}:generateContent?key=${encodeURIComponent(S.key)}`;
     const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({contents:[{parts:[{text:buildWeekPrompt()}]}],generationConfig:{temperature:1.0, maxOutputTokens:8192}})});
+      body:JSON.stringify({contents:[{parts:[{text:buildWeekPrompt()}]}],generationConfig:{temperature:0.9, maxOutputTokens:16384}})});
     if(!res.ok){ const t=await res.text(); throw new Error(`HTTP ${res.status} — ${t.slice(0,180)}`); }
     const data=await res.json();
+    const finish = data.candidates?.[0]?.finishReason;
     const text=((data.candidates?.[0]?.content?.parts)||[]).map(p=>p.text||"").join("");
-    const s=text.indexOf("{"), e=text.lastIndexOf("}");
-    if(s<0||e<0) throw new Error("응답 형식 오류 — 다시 시도해 주세요.");
-    S.week=JSON.parse(text.slice(s,e+1));
+    S.week = parseWeek(text);
+    if(!S.week || !Array.isArray(S.week.days) || !S.week.days.length)
+      throw new Error("응답 형식 오류 — 다시 시도해 주세요.");
     S.week.madeAt=new Date().toLocaleDateString("ko-KR");
+    S.week.truncated = (finish && finish!=="STOP") || S.week.days.length<7;
     save("week",S.week);
     renderWeek();
   }catch(ex){
@@ -633,6 +635,34 @@ async function recommendWeek(){
     btn.disabled=false; btn.textContent="📅 1주일 식단표 만들기";
   }
 }
+function parseWeek(text){
+  const s=text.indexOf("{"); if(s<0) return null;
+  let body=text.slice(s);
+  const e=body.lastIndexOf("}");
+  // 1) 정상 파싱 시도
+  if(e>0){ try{ return JSON.parse(body.slice(0,e+1)); }catch(_){} }
+  // 2) 잘린 경우 복구: 완결된 day 객체들만 최대한 살림
+  try{
+    const dm = body.match(/"days"\s*:\s*\[/);
+    if(!dm) return null;
+    const rest = body.slice(dm.index + dm[0].length);
+    const days=[]; let depth=0, cur="";
+    for(const ch of rest){
+      if(ch==="{"){ if(depth===0) cur=""; depth++; cur+=ch; }
+      else if(ch==="}"){ depth--; cur+=ch; if(depth===0){ try{ days.push(JSON.parse(cur)); }catch(_){} } }
+      else if(depth>0){ cur+=ch; }
+      else if(depth===0 && ch==="]"){ break; }
+    }
+    if(!days.length) return null;
+    let shopping=[], balance="";
+    const sm = body.match(/"shopping"\s*:\s*\[([^\]]*)\]/);
+    if(sm){ try{ shopping=JSON.parse("["+sm[1]+"]"); }catch(_){} }
+    const bm = body.match(/"balance"\s*:\s*"([^"]*)"/);
+    if(bm) balance=bm[1];
+    return {days, shopping, balance};
+  }catch(_){ return null; }
+}
+
 // ── 🚫 제외 재료 ─────────────────────────────────────────────
 function renderDislikes(){
   const box=document.getElementById("dislikes"); if(!box) return;
@@ -665,6 +695,10 @@ function renderWeek(){
   const box=document.getElementById("planResult"); box.innerHTML="";
   const w=S.week; if(!w||!Array.isArray(w.days)) return;
   const today="일월화수목금토"[new Date().getDay()];
+  if(w.truncated){
+    box.insertAdjacentHTML("beforeend",
+      `<div class="err" style="background:#FFF4E0;color:#9A6A1B">⚠️ 식단이 길어 일부(${w.days.length}/7일)만 받았어요. '유아식 포함'을 끄거나 다시 눌러 전체를 받아보세요.</div>`);
+  }
   const dayHead=(d)=>`<div style="font-family:'Jua'; font-size:14.5px; margin-bottom:5px; color:${d.day===today?"var(--accent)":"var(--ink)"}">${d.day}요일${d.day===today?" · 오늘":""}</div>`;
   let html="";
 
