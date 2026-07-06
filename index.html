@@ -30,9 +30,10 @@
   .chip.on{background:var(--accent); border-color:var(--accent); color:#fff}
   .chip.del{border-color:#C97; color:#B7492F}
   .row{display:flex; gap:8px; margin-top:12px}
-  input,select{border:1.5px solid var(--line); border-radius:12px; padding:12px 13px; font-size:15px;
+  input,select,textarea{border:1.5px solid var(--line); border-radius:12px; padding:12px 13px; font-size:15px;
         font-family:inherit; background:#fff; width:100%; color:var(--ink)}
-  input:focus,select:focus,button:focus-visible{outline:3px solid var(--accent); outline-offset:1px}
+  textarea{min-height:150px; resize:vertical; font-size:13.5px; line-height:1.6}
+  input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid var(--accent); outline-offset:1px}
   .btn{border:none; border-radius:12px; padding:12px 16px; font-family:'Jua',sans-serif; font-size:15px; cursor:pointer}
   .btn.green{background:var(--leaf); color:#fff}
   .btn.ghost{background:none; border:1px solid var(--line); color:var(--soft); font-family:'Gowun Dodum',sans-serif; font-size:13px}
@@ -197,6 +198,27 @@
     </div>
 
     <div class="card">
+      <div class="stitle">🧠 AI 지시문 커스텀 <button class="iinfo" onclick="showInfo('prompts')" aria-label="설명">ⓘ</button></div>
+      <div class="hint">추천할 때 AI에게 보내는 지시문이에요. 기본값이 있고, 원하는 대로 다듬을 수 있어요. 수정한 것도 폰에 저장돼요.</div>
+      <div class="row" style="margin-top:4px">
+        <select id="pSel" onchange="renderPromptEditor()">
+          <option value="유아식">🍚 유아식 지시</option>
+          <option value="어른식">🍲 어른식 지시</option>
+          <option value="간식">🍪 간식 지시</option>
+          <option value="건강식">🥗 건강식 우선 지시</option>
+          <option value="식단표">📅 주간 식단표 원칙</option>
+        </select>
+      </div>
+      <div class="row"><textarea id="pText"></textarea></div>
+      <div class="row">
+        <button class="btn green" style="flex:1" onclick="savePrompt()">저장</button>
+        <button class="btn ghost" style="flex:1" onclick="resetPrompt()">기본값 복원</button>
+      </div>
+      <div class="hint" id="pStatus" style="margin-top:8px"></div>
+      <button class="btn ghost" style="width:100%" onclick="previewPrompt()">🔎 실제 전송되는 전체 프롬프트 미리보기</button>
+    </div>
+
+    <div class="card">
       <div class="stitle">🧹 데이터</div>
       <div class="hint">모든 데이터(키·재료·메뉴·출처)는 이 폰 브라우저에만 저장돼요. 브라우저 데이터를 지우면 함께 지워져요.</div>
       <button class="btn ghost" onclick="resetAll()">전체 초기화</button>
@@ -295,6 +317,14 @@ const INFO = {
     <b>🧲 저장고 재료 우선</b>을 켜면 내 재료 저장고의 재료를 최대한 활용하고, 부족한 것만 🛒 장보기 리스트로 뽑아줘요.</p>
     <p>각 표의 <b>🖼 이미지로 저장</b>을 누르면 PNG 그림파일로 저장돼요 — 냉장고에 붙이거나 가족에게 카톡으로 보내기 좋아요.</p>
     <p>식단표는 폰에 저장돼서 언제든 다시 볼 수 있고, 새로 만들면 교체돼요.</p>`},
+  prompts: {t:"🧠 AI 지시문 커스텀", b:`
+    <p>추천을 누를 때 AI(Gemini)에게 보내는 <b>지시문(프롬프트)</b>이에요. 5가지를 각각 수정할 수 있어요: 유아식·어른식·간식 지시, 건강식 우선 지시, 주간 식단표 원칙.</p>
+    <p><b>예시:</b> 어른식 지시에 "매운 음식 제외", "국물 요리 위주로", "당뇨 식단 기준으로" 같은 문장을 덧붙이면 그대로 반영돼요.</p>
+    <p><b>알아둘 것 3가지:</b><br>
+    ① 유아식 지시의 <b>{단계}</b>는 자동으로 선택한 개월수 단계로 바뀌는 자리표시자예요 — 지우지 마세요.<br>
+    ② 출력 형식(JSON)과 점수 채점 규칙은 앱이 뒤에 자동으로 붙여요 — 신경 쓸 필요 없어요.<br>
+    ③ 유아식 <b>안전 규칙(12개월 미만 꿀·소금·설탕 금지)</b>은 지시문을 어떻게 고쳐도 항상 자동 적용돼요.</p>
+    <p>수정본은 폰에 저장되고, <b>기본값 복원</b>으로 언제든 되돌릴 수 있어요. '미리보기'로 실제 전송되는 전체 내용을 확인해 보세요.</p>`},
   keysec: {t:"🔒 API 키, 안전한가요?", b:`
     <p><b>결론: 안심하고 쓰셔도 돼요.</b> 이유는 이래요.</p>
     <p>① 키는 <b>이 폰의 브라우저 안에만</b> 저장돼요. 이 앱은 서버가 없어서, 앱 제작자를 포함해 그 누구에게도 키가 전송되지 않아요.</p>
@@ -322,9 +352,22 @@ let S = {
   cat: load("cat","유아식"), stage: load("stage", STAGES[2]), healthy: load("healthy", true),
   sort: load("sort","use"),
   week: load("week", null), planBaby: load("planBaby", true), planPantry: load("planPantry", true),
+  prompts: load("prompts", {}),
   edit:false, srcTab:"유아식", results:[], groundedList:[], loading:false,
 };
 const SORTS = { use:"🥕 재료 활용도순", health:"🥗 건강 점수순", ease:"⚡ 간편함순" };
+const DEFAULT_PROMPTS = {
+  "유아식": `위 재료로 만들 수 있는 "{단계}" 단계 이유식/유아식 3가지를 추천해줘.
+- 단계에 맞는 농도·입자 크기를 지켜줘.
+- 12개월 미만에게는 꿀·소금·설탕을 절대 쓰지 마. 간은 최소화.`,
+  "어른식": `위 재료로 20~30분 안에 되는 건강한 어른 한 끼 3가지를 추천해줘. 고단백·채소 위주로 다양하게.`,
+  "간식": `위 재료로 아이와 어른이 함께 즐길 간단한 간식 3가지를 추천해줘. 너무 달지 않게.`,
+  "건강식": `[건강식 우선] 영양 균형 최우선: 신선한 채소·통곡물·양질의 단백질을 쓰고 튀김·과한 나트륨·설탕은 피해줘.`,
+  "식단표": `[원칙 1 — 질리지 않게] 7일 안에 같은 요리를 절대 반복하지 말 것. 주재료와 조리법(볶음/국·탕/찜/구이/무침/한그릇)을 매일 다르게 순환할 것.
+[원칙 2 — 영양 골고루] 단백질원(소고기/돼지고기/닭/생선/달걀/두부·콩)을 주 단위로 고르게 배분하고, 매일 채소를 포함하며, 나트륨·당은 낮게. 튀김은 주 1회 이하.`,
+};
+function P(k){ const o = S.prompts && S.prompts[k]; return (typeof o==="string" && o.trim()) ? o : DEFAULT_PROMPTS[k]; }
+
 
 // ── 탭 ──────────────────────────────────────────────────────
 function go(t){
@@ -411,12 +454,10 @@ function toggleHealthy(){
 function buildPrompt(){
   const srcNames = (S.sources[S.cat]||[]).map(s=>s.name).join(" / ") || "신뢰할 수 있는 요리·영양 자료";
   let base = `당신은 한국 가정식과 이유식에 능숙한 다정한 요리 도우미입니다.\n집에 있는 재료: ${S.selected.join(", ")}.\n기본 양념(소금·간장·참기름·물·기름)과 주식은 필요하면 더 써도 됩니다.`;
-  let inst;
-  if(S.cat==="유아식") inst = `위 재료로 만들 수 있는 "${S.stage}" 단계 이유식/유아식 3가지를 추천해줘.\n- 단계에 맞는 농도·입자 크기를 지켜줘.\n- 12개월 미만에게는 꿀·소금·설탕을 절대 쓰지 마. 간은 최소화.`;
-  else if(S.cat==="어른식") inst = `위 재료로 20~30분 안에 되는 건강한 어른 한 끼 3가지를 추천해줘. 고단백·채소 위주로 다양하게.`;
-  else inst = `위 재료로 아이와 어른이 함께 즐길 간단한 간식 3가지를 추천해줘. 너무 달지 않게.`;
+  let inst = P(S.cat).replace(/\{단계\}/g, S.stage);
+  if(S.cat==="유아식") inst += `\n(안전 규칙 — 항상 적용: 12개월 미만 꿀·소금·설탕 금지, 간 최소화, 단계에 맞는 농도·입자 크기 준수)`;
   const grounding = `\n\n[출처] 다음 같은 신뢰할 수 있는 곳을 우선으로 웹 검색해서 참고해줘: ${srcNames}. 각 요리마다 실제로 검색된 원본 레시피/자료 URL을 하나씩 source_url 에 넣어줘. 레시피 문장은 저작권을 위해 반드시 네 말로 새로 요약하고 그대로 베끼지 마.`;
-  const health = S.healthy ? `\n\n[건강식 우선] 영양 균형 최우선: 신선한 채소·통곡물·양질의 단백질을 쓰고 튀김·과한 나트륨·설탕은 피해줘.` : "";
+  const health = S.healthy ? `\n\n`+P("건강식") : "";
   const fmt = `\n\n반드시 아래 JSON 배열로만 답하고 다른 말·마크다운·코드펜스는 넣지 마.\n[{"name":"요리 이름","emoji":"🍳","time":"약 15분","difficulty":"쉬움","ingredients":["재료1"],"steps":["1) 짧게"],"tip":"한 줄 팁","health":"건강 포인트 한 줄","source_title":"참고 자료 이름","source_url":"https://...","scores":{"use":88,"health":90,"ease":75}}]\n- 정확히 3개. steps는 3~5단계, 각 단계 한 문장.\n- scores는 0~100 정수로 정직하게 채점: use=선택한 재료를 얼마나 많이·핵심적으로 활용하는지, health=영양 균형(채소·단백질·나트륨·당 고려), ease=조리 간편함(시간 짧고 단계·설거지 적을수록 높게). 세 점수가 요리마다 차이 나게 현실적으로.`;
   return base+"\n\n"+inst+grounding+health+fmt;
 }
@@ -541,9 +582,8 @@ function buildWeekPrompt(){
     : `구성: 매일 [어른식, 간식] 두 가지.\n`;
   if(S.planPantry && S.selected.length) p += `집에 있는 재료(${S.selected.join(", ")})를 최대한 활용하되, 없는 재료를 써도 됩니다.\n`;
   else if(S.planPantry && S.pantry.length) p += `집에 있는 재료(${S.pantry.join(", ")})를 최대한 활용하되, 없는 재료를 써도 됩니다.\n`;
-  p += `\n[원칙 1 — 질리지 않게] 7일 안에 같은 요리를 절대 반복하지 말 것. 주재료와 조리법(볶음/국·탕/찜/구이/무침/한그릇)을 매일 다르게 순환할 것.\n`;
-  p += `[원칙 2 — 영양 골고루] 단백질원(소고기/돼지고기/닭/생선/달걀/두부·콩)을 주 단위로 고르게 배분하고, 매일 채소를 포함하며, 나트륨·당은 낮게. 튀김은 주 1회 이하.\n`;
-  if(S.healthy) p += `[건강식 우선] 통곡물·신선 채소·양질의 단백질 중심으로.\n`;
+  p += `\n`+P("식단표")+`\n`;
+  if(S.healthy) p += P("건강식")+`\n`;
   p += `\n반드시 아래 JSON으로만 답하고 다른 말·마크다운·코드펜스는 넣지 마.\n`;
   p += S.planBaby
     ? `{"days":[{"day":"월","baby":"유아식 메뉴","adult":"어른식 메뉴","snack":"간식"}],"shopping":["집에 없는 필요 재료만"],"balance":"이번 주 영양 밸런스 한두 문장 요약"}\n`
@@ -635,6 +675,73 @@ function saveImage(id, name){
 }
 
 
+// ── AI 지시문(프롬프트) 커스텀 ─────────────────────────────────
+function renderPromptEditor(){
+  const k = document.getElementById("pSel").value;
+  document.getElementById("pText").value = P(k);
+  const custom = S.prompts && typeof S.prompts[k]==="string" && S.prompts[k].trim();
+  document.getElementById("pStatus").textContent = custom ? "✏️ 수정된 버전을 쓰고 있어요." : "기본값을 쓰고 있어요.";
+}
+function savePrompt(){
+  const k = document.getElementById("pSel").value;
+  const v = document.getElementById("pText").value;
+  S.prompts = S.prompts || {};
+  if(v.trim() === DEFAULT_PROMPTS[k].trim()){ delete S.prompts[k]; }
+  else { S.prompts[k] = v; }
+  save("prompts", S.prompts);
+  document.getElementById("pStatus").textContent = "✅ 저장했어요. 다음 추천부터 적용돼요.";
+}
+function resetPrompt(){
+  const k = document.getElementById("pSel").value;
+  if(S.prompts) delete S.prompts[k];
+  save("prompts", S.prompts||{});
+  renderPromptEditor();
+  document.getElementById("pStatus").textContent = "↩️ 기본값으로 되돌렸어요.";
+}
+function previewPrompt(){
+  const k = document.getElementById("pSel").value;
+  let full, editable;
+  if(k==="식단표"){
+    full = buildWeekPrompt();
+    editable = [P("식단표")];
+    if(S.healthy) editable.push(P("건강식"));
+  } else {
+    const keep = S.cat;
+    if(k!=="건강식") S.cat = k;
+    editable = [P(S.cat).replace(/\{단계\}/g, S.stage)];
+    if(S.healthy) editable.push(P("건강식"));
+    full = buildPrompt();
+    S.cat = keep;
+  }
+  const esc = t => t.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+  const cut = full.indexOf("반드시 아래 JSON");
+  const human = cut>=0 ? full.slice(0,cut).trim() : full;
+  const tech  = cut>=0 ? full.slice(cut).trim() : "";
+  // 사람이 읽는 부분을 이스케이프한 뒤, 편집 가능한 단락만 색으로 감싸기
+  let humanHtml = esc(human);
+  const mark = (isCustom) =>
+    `style="color:#B7492F; background:${isCustom?"#FBE9E4":"#FDF3F0"}; border-left:3px solid #B7492F; display:block; padding:6px 8px; border-radius:6px; margin:4px 0"`;
+  editable.forEach(seg=>{
+    const e = esc(seg.trim());
+    if(e && humanHtml.includes(e)){
+      const isCustom = !Object.values(DEFAULT_PROMPTS).some(d=>esc(d.trim())===e);
+      humanHtml = humanHtml.replace(e, `<span ${mark(isCustom)}>${e}</span>`);
+    }
+  });
+  document.getElementById("mTitle").textContent = "🔎 실제 전송되는 프롬프트";
+  document.getElementById("mBody").innerHTML =
+    `<p style="font-size:12.5px; color:var(--soft); margin-bottom:8px">
+       <span style="color:#B7492F">■ 빨간 부분</span> = '지시문 커스텀'에서 <b>내가 고칠 수 있는 단락</b><br>
+       <span style="color:var(--ink)">■ 검은 부분</span> = 항상 유지되는 뼈대 (역할·재료·출처·안전규칙 — 자동 조립)</p>
+     <pre style="white-space:pre-wrap; font-size:12.5px; line-height:1.65; background:var(--paper); padding:12px; border-radius:10px; font-family:inherit">${humanHtml}</pre>` +
+    (tech ? `<details style="margin-top:10px">
+       <summary style="font-size:13px; color:var(--soft); cursor:pointer">⚙️ 기술 형식 부분 보기 (몰라도 되는 부분)</summary>
+       <p style="font-size:12px; color:var(--soft); margin:8px 0 6px">AI의 답을 앱이 요리 카드로 그릴 수 있게, 정해진 데이터 서식(JSON)과 점수 채점 기준을 지정하는 부분이에요. 앱이 자동으로 붙이므로 수정할 필요 없어요.</p>
+       <pre style="white-space:pre-wrap; font-size:11.5px; line-height:1.6; background:var(--paper); padding:12px; border-radius:10px; font-family:inherit">${esc(tech)}</pre>
+     </details>` : "");
+  document.getElementById("modalBg").classList.add("show");
+}
+
 // ── 내 메뉴 ─────────────────────────────────────────────────
 function renderMenus(){
   const sel = document.getElementById("menuCat");
@@ -716,7 +823,7 @@ document.getElementById("apiKey").value = S.key;
 document.getElementById("modelSel").value = S.model;
 toggleHealthy(); toggleHealthy(); // 저장된 값 기준으로 표시 동기화
 renderPantry(); renderCats(); renderMenus(); renderSrcTabs(); renderSrcList(); renderKeyStatus();
-syncPlanToggles(); renderWeek();
+syncPlanToggles(); renderWeek(); renderPromptEditor();
 </script>
 </body>
 </html>
