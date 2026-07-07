@@ -1,1230 +1,1109 @@
 <!DOCTYPE html>
+<!--
+============================================================
+  우리 가족 스케줄 앱  ·  4-2a단계 : 날짜별 예외 추가
+------------------------------------------------------------
+  이제 앱이 '날짜별'로 움직여요.
+   · 데일리 = 오늘,  주간 = 이번 주,  월간 = 고른 날짜
+   · 각 화면은 [기본 일정] + [그 날짜 예외]를 합쳐서 보여줘요.
+
+  + 로 일정을 추가할 때 '언제 적용할지'를 고를 수 있어요:
+   이 날짜만 / 이 주 / 이 달 / 올해 / 직접 선택 / 매일(기본)
+
+  (이 날짜만 '수정·삭제'는 다음 4-2b에서 붙여요.)
+============================================================
+-->
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>우리집 냉장고 식단 도우미</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Gaegu:wght@400;700&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<style>
-  :root{
-    --paper:#F3EFE4; --board:#EAE4D4; --ink:#2C2A24; --soft:#7A7461;
-    --line:#D8D0BC; --leaf:#35624A; --accent:#E08A4C; --tint:#FBEEDF;
-  }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
-  html,body{margin:0; padding:0}
-  body{background:var(--paper); color:var(--ink); font-family:'Gowun Dodum',sans-serif; font-size:15px;
-       padding-bottom:calc(76px + env(safe-area-inset-bottom));}
-  .wrap{max-width:520px; margin:0 auto; padding:18px 14px 8px}
-  h1{font-family:'Jua',sans-serif; font-size:24px; margin:2px 0 4px; text-align:center}
-  .eyebrow{font-family:'Gaegu',cursive; color:var(--soft); text-align:center; font-size:14px}
-  .sub{color:var(--soft); font-size:13px; text-align:center; margin:0 0 16px}
-  .card{background:#fff; border:1.5px solid var(--line); border-radius:18px; padding:14px; margin-bottom:12px;
-        box-shadow:0 6px 20px rgba(0,0,0,.04)}
-  .board{background:var(--board); border:2px dashed var(--line); border-radius:20px; padding:14px; margin-bottom:14px}
-  .stitle{font-family:'Jua',sans-serif; font-size:15px; margin-bottom:10px; display:flex; align-items:center; gap:6px; justify-content:space-between}
-  .hint{font-size:12px; color:var(--soft); margin-bottom:10px}
-  .chips{display:flex; flex-wrap:wrap; gap:8px}
-  .chip{background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:8px 12px;
-        font-family:'Gaegu',cursive; font-size:17px; box-shadow:0 2px 0 rgba(0,0,0,.05); cursor:pointer; user-select:none}
-  .chip.on{background:var(--accent); border-color:var(--accent); color:#fff}
-  .chip.del{border-color:#C97; color:#B7492F}
-  .row{display:flex; gap:8px; margin-top:12px}
-  input,select,textarea{border:1.5px solid var(--line); border-radius:12px; padding:12px 13px; font-size:15px;
-        font-family:inherit; background:#fff; width:100%; color:var(--ink)}
-  textarea{min-height:150px; resize:vertical; font-size:13.5px; line-height:1.6}
-  input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid var(--accent); outline-offset:1px}
-  .btn{border:none; border-radius:12px; padding:12px 16px; font-family:'Jua',sans-serif; font-size:15px; cursor:pointer}
-  .btn.green{background:var(--leaf); color:#fff}
-  .btn.ghost{background:none; border:1px solid var(--line); color:var(--soft); font-family:'Gowun Dodum',sans-serif; font-size:13px}
-  .cats{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:10px}
-  .cat{background:#fff; border:2px solid var(--line); border-radius:16px; padding:12px 4px; text-align:center; cursor:pointer}
-  .cat .e{font-size:24px} .cat .l{font-family:'Jua',sans-serif; font-size:15px} .cat .s{font-size:11px; color:var(--soft)}
-  .cat.on{border-color:var(--accent); background:var(--tint)} .cat.on .l{color:var(--accent)}
-  .stagebox{background:var(--tint); border-radius:14px; padding:12px; margin-bottom:10px}
-  .stages{display:flex; flex-wrap:wrap; gap:6px}
-  .stage{background:#fff; border:1.5px solid var(--line); border-radius:20px; padding:8px 12px; font-size:13px; cursor:pointer}
-  .stage.on{background:var(--accent); border-color:var(--accent); color:#fff}
-  .toggle{width:100%; background:#fff; border:2px solid var(--line); border-radius:14px; padding:12px; margin-bottom:12px;
-          display:flex; align-items:center; justify-content:center; gap:8px; color:var(--soft); font-size:14px; cursor:pointer}
-  .toggle.on{background:#E6F0E9; border-color:var(--leaf); color:var(--leaf)}
-  .modebtn{background:#fff; border:2px solid var(--line); border-radius:14px; padding:10px 4px; text-align:center; cursor:pointer}
-  .modebtn.on{border-color:var(--accent); background:var(--tint)}
-  .modebtn.on .st{color:var(--accent)}
-  .cta{width:100%; background:var(--accent); color:#fff; border:none; border-radius:16px; padding:16px;
-       font-family:'Jua',sans-serif; font-size:18px; box-shadow:0 4px 0 rgba(0,0,0,.12); cursor:pointer}
-  .cta:disabled{background:var(--soft); box-shadow:none}
-  .err{margin-top:12px; background:#FBEAE7; color:#B7492F; border-radius:12px; padding:12px; font-size:14px; word-break:break-all}
-  .dish h3{font-family:'Jua',sans-serif; font-size:18px; margin:0 0 4px}
-  .meta{font-size:12px; color:var(--soft); margin-bottom:8px}
-  .health{background:#E6F0E9; color:var(--leaf); border-radius:10px; padding:9px 12px; font-size:13px; margin-bottom:8px}
-  .ings{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px}
-  .ing{background:var(--tint); color:var(--accent); border-radius:8px; padding:4px 9px; font-size:13px}
-  ol.steps{margin:8px 0 0; padding:0; list-style:none}
-  ol.steps li{display:flex; gap:10px; margin-bottom:9px; font-size:14px; line-height:1.5}
-  ol.steps .n{background:var(--accent); color:#fff; border-radius:50%; min-width:22px; height:22px; display:flex;
-        align-items:center; justify-content:center; font-size:12px; font-family:'Jua',sans-serif}
-  .tip{background:var(--tint); border-radius:10px; padding:9px 12px; font-size:13px; font-family:'Gaegu',cursive; margin-top:6px}
-  .src{margin-top:10px; font-size:13px}
-  .src a{color:var(--leaf); word-break:break-all}
-  .dish .actions{display:flex; gap:8px; margin-top:12px}
-  .menuitem{display:flex; align-items:center; gap:10px; background:#fff; border:1px solid var(--line);
-        border-radius:12px; padding:10px 12px; margin-bottom:8px}
-  .menuitem .nm{flex:1; font-size:14.5px}
-  .badge{font-size:11px; border-radius:6px; padding:2px 8px; background:var(--tint); color:var(--accent)}
-  .x{border:none; background:none; color:var(--soft); font-size:16px; cursor:pointer}
-  .srcline{display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13px}
-  .srcline a{color:var(--leaf); flex:1; word-break:break-all; text-decoration:none}
-  .srcline span.plain{flex:1}
-  .footer{text-align:center; color:var(--soft); font-size:12px; font-family:'Gaegu',cursive; line-height:1.7; margin:24px 0}
-  .nav{position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1.5px solid var(--line);
-       display:flex; padding-bottom:env(safe-area-inset-bottom); z-index:10}
-  .nav button{flex:1; border:none; background:none; padding:10px 0 8px; font-family:inherit; color:var(--soft); font-size:11px; cursor:pointer}
-  .nav button .ni{display:block; font-size:22px; margin-bottom:2px}
-  .nav button.on{color:var(--accent); font-family:'Jua',sans-serif}
-  .tab{display:none} .tab.show{display:block}
-  .spin{display:inline-block; animation:sp 1s linear infinite}
-  @keyframes sp{to{transform:rotate(360deg)}}
-  .in{animation:rise .4s cubic-bezier(.2,.7,.3,1) both}
-  @keyframes rise{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
-  @media (prefers-reduced-motion:reduce){.in,.spin,.sheet{animation:none!important}}
-  .iinfo{border:none;background:none;color:var(--soft);font-size:14px;cursor:pointer;padding:1px 4px;line-height:1;vertical-align:middle}
-  .cat{position:relative}
-  .cat .iinfo{position:absolute;top:6px;right:8px}
-  .modal-bg{position:fixed;inset:0;background:rgba(44,42,36,.45);display:none;z-index:20}
-  .modal-bg.show{display:flex;align-items:flex-end;justify-content:center}
-  .sheet{background:#fff;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
-         max-width:520px;width:100%;max-height:70vh;overflow:auto;animation:up .25s ease-out}
-  @keyframes up{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
-  .sheet h3{font-family:'Jua',sans-serif;margin:0 0 10px;font-size:18px}
-  .sheet p{font-size:14px;line-height:1.75;margin:0 0 10px}
-  .sortbar{display:flex;gap:6px;align-items:center;margin:16px 0 10px;flex-wrap:wrap}
-  .sortlbl{font-size:12px;color:var(--soft)}
-  .scores{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-  .score{font-size:12px;border-radius:8px;padding:3px 8px;background:var(--paper);color:var(--soft);border:1px solid var(--line)}
-  .score.hot{background:var(--tint);color:var(--accent);border-color:var(--accent);font-weight:bold}
-  .medal{font-size:16px;margin-right:4px}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>우리 가족 스케줄</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #FAF8F4; --card: #FFFFFF; --ink: #2C2C2A;
+      --muted: #8C8B82; --line: #ECEAE2; --accent: #2B7A78;
+      --all: #6B8E5A; --dad: #3B7DBF; --mom: #E08A4E; --child: #34A79A;
+    }
+    body { background: var(--bg); color: var(--ink); font-family: -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+    .app { max-width: 480px; margin: 0 auto; height: 100dvh; display: flex; flex-direction: column; background: var(--bg); position: relative; }
+    .header { padding: 18px 20px 14px; border-bottom: 1px solid var(--line); background: var(--card); }
+    .header h1 { font-size: 19px; font-weight: 600; }
+    .header .date { margin-top: 3px; font-size: 13px; color: var(--muted); }
+    .content { flex: 1; overflow-y: auto; padding: 18px 16px; }
+    .tabbar { display: flex; border-top: 1px solid var(--line); background: var(--card); padding-bottom: env(safe-area-inset-bottom); }
+    .tab { flex: 1; border: none; background: none; padding: 9px 0 8px; color: var(--muted); font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .tab svg { width: 23px; height: 23px; }
+    .tab.active { color: var(--accent); font-weight: 600; }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .screen-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+
+    .people { display: flex; gap: 8px; margin-bottom: 14px; }
+    .person { flex: 1; border: 1.5px solid var(--line); background: var(--card); border-radius: 999px; padding: 9px 0; font-size: 14px; color: var(--ink); cursor: pointer; font-family: inherit; }
+    .person.active { color: #fff; border-color: transparent; }
+
+    .clock-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 10px 12px; }
+    #daily-clock svg, #week-chart svg, #day-detail .clock-card svg { width: 100%; display: block; margin: 0 auto; }
+    #daily-clock svg, #day-detail .clock-card svg { max-width: 320px; }
+    #week-chart svg { max-width: 360px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 7px 14px; justify-content: center; margin-top: 8px; }
+    .legend .lg { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .legend .dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+
+    .list { background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; margin-top: 14px; }
+    .item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-bottom: 1px solid var(--line); border-left: 4px solid var(--line); }
+    .item:last-child { border-bottom: none; }
+    .item .time { font-size: 13px; color: var(--muted); width: 96px; flex-shrink: 0; }
+    .item .ititle { font-size: 15px; flex: 1; }
+    .item .badge { font-size: 11px; color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; padding: 1px 5px; }
+    .item .who { font-size: 12px; font-weight: 600; }
+    .item.now { background: #FFF3E0; }
+    .item.now .time { color: #B4691A; }
+    .nowbadge { font-size: 11px; color: #fff; background: #C0392B; border-radius: 6px; padding: 1px 6px; margin-left: 4px; }
+    .item .edby { font-size: 11px; color: var(--muted); margin-left: 4px; }
+    .item .edby.mine { color: var(--accent); font-weight: 600; }
+    .hint { font-size: 12px; color: var(--muted); text-align: center; margin-top: 12px; }
+    .empty { text-align: center; color: var(--muted); padding: 24px; font-size: 14px; }
+
+    .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .cal-title { font-size: 15px; font-weight: 600; }
+    .cal-nav { border: 1px solid var(--line); background: var(--card); border-radius: 8px; width: 34px; height: 34px; font-size: 17px; cursor: pointer; color: var(--ink); }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-dow { text-align: center; font-size: 12px; color: var(--muted); padding: 2px 0 4px; }
+    .cal-dow.sun { color: #C4553B; } .cal-dow.sat { color: #3B6FBF; }
+    .cal-cell { min-height: 62px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); display: flex; flex-direction: column; padding: 4px 4px 3px; cursor: pointer; overflow: hidden; }
+    .cal-cell.blank { border: none; background: transparent; cursor: default; }
+    .cal-daynum { font-size: 13px; padding-left: 2px; }
+    .cal-cell.today { border-color: var(--accent); }
+    .cal-cell.today .cal-daynum { color: var(--accent); font-weight: 700; }
+    .cal-cell.selected { box-shadow: inset 0 0 0 1.6px var(--accent); border-color: transparent; }
+    .cal-cell.selected .cal-daynum { color: var(--accent); font-weight: 700; }
+    .cal-evs { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; overflow: hidden; }
+    .cal-ev { font-size: 8.5px; line-height: 1.5; color: #fff; border-radius: 3px; padding: 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-more { font-size: 8px; color: var(--muted); padding-left: 2px; }
+    .week-evs { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 10px; }
+    .wcol-day { text-align: center; font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+    .wcol-day .wnum { display: block; font-size: 12px; color: var(--ink); font-weight: 600; }
+    .wcol.wtoday .wnum { color: var(--accent); }
+    .wcol-list { display: flex; flex-direction: column; gap: 2px; min-height: 4px; }
+    .wedit { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--mom); margin-left: 3px; }
+    .day-detail { margin-top: 18px; }
+    .day-detail h3 { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+
+    .fab { position: absolute; right: 16px; bottom: calc(66px + env(safe-area-inset-bottom)); width: 54px; height: 54px; border-radius: 50%; border: none; background: var(--accent); color: #fff; font-size: 28px; line-height: 1; box-shadow: 0 4px 14px rgba(0,0,0,0.18); cursor: pointer; z-index: 30; }
+
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; align-items: flex-end; justify-content: center; z-index: 40; }
+    .head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .hist-btn { background: var(--card); border: 1px solid var(--line); color: var(--ink); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .who-ask { font-size: 13px; color: var(--ink); margin-bottom: 14px; }
+    .who-sub { font-size: 11px; color: var(--muted); }
+    .who-btns { display: flex; gap: 8px; margin-top: 8px; }
+    .who-b { flex: 1; border: 1.5px solid var(--line); background: var(--card); border-radius: 10px; padding: 9px 0; font-size: 14px; cursor: pointer; font-family: inherit; color: var(--ink); }
+    .who-b.on { background: var(--accent); color: #fff; border-color: transparent; }
+    .hist-list { max-height: 52vh; overflow-y: auto; margin-bottom: 8px; }
+    .hist-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 24px 0; }
+    .hist-item { border-bottom: 1px solid var(--line); padding: 10px 2px; }
+    .hist-top { display: flex; justify-content: space-between; margin-bottom: 3px; }
+    .hist-who { font-size: 13px; font-weight: 600; color: var(--ink); }
+    .hist-who.mine { color: var(--accent); }
+    .hist-time { font-size: 12px; color: var(--muted); }
+    .hist-body { font-size: 14px; color: var(--ink); }
+    .hist-act { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; color: #fff; margin-right: 4px; }
+    .hist-act.add { background: #6B8E5A; } .hist-act.edit { background: #3B7DBF; } .hist-act.del { background: #C0392B; }
+    .hist-when { font-size: 12px; color: var(--muted); }
+    .modal.open { display: flex; }
+    .sheet { background: var(--card); width: 100%; max-width: 480px; border-radius: 18px 18px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom)); max-height: 90vh; overflow-y: auto; }
+    .sheet h3 { font-size: 17px; font-weight: 600; margin-bottom: 14px; }
+    .form-msg { color: #C0392B; font-size: 13px; margin-bottom: 10px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .field input { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 11px 12px; font-size: 15px; font-family: inherit; color: var(--ink); background: var(--bg); }
+    .who-pick { display: flex; gap: 8px; }
+    .who-pick .person { flex: 1; }
+    .times { display: flex; gap: 10px; }
+    .times .field { flex: 1; }
+    .edit-note { font-size: 12px; color: var(--muted); background: var(--bg); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
+    .scope-pick { display: flex; flex-wrap: wrap; gap: 8px; }
+    .scope { border: 1.5px solid var(--line); background: var(--card); border-radius: 999px; padding: 8px 14px; font-size: 13px; color: var(--ink); cursor: pointer; font-family: inherit; }
+    .scope.active { background: var(--accent); color: #fff; border-color: transparent; }
+    .scope-hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    .minical { margin-top: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+    .mc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .mc-title { font-size: 13px; font-weight: 600; }
+    .mc-nav { border: 1px solid var(--line); background: var(--card); border-radius: 8px; width: 30px; height: 30px; font-size: 15px; cursor: pointer; color: var(--ink); }
+    .mc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .mc-dow { text-align: center; font-size: 11px; color: var(--muted); }
+    .mc-cell { aspect-ratio: 1 / 1; border: 1px solid var(--line); border-radius: 8px; background: var(--card); display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; }
+    .mc-cell.blank { border: none; background: transparent; cursor: default; }
+    .mc-cell.sel { background: var(--accent); color: #fff; border-color: transparent; }
+    .mc-allbtn { width: 100%; margin: 8px 0; background: var(--card); color: var(--accent); border: 1.5px solid var(--accent); border-radius: 8px; padding: 8px 0; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .sheet-btns { display: flex; gap: 10px; margin-top: 6px; }
+    .btn { border: none; border-radius: 10px; padding: 13px 0; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-save { flex: 1; background: var(--accent); color: #fff; }
+    .btn-cancel { flex: 1; background: var(--bg); color: var(--ink); border: 1.5px solid var(--line); }
+    .btn-del { background: #FBECEC; color: #C0392B; border: 1.5px solid #F0D0D0; padding: 13px 16px; }
+    .btn-gcal { width: 100%; margin-top: 10px; background: var(--card); color: var(--accent); border: 1.5px solid var(--accent); border-radius: 10px; padding: 12px 0; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .pin-row { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; cursor: pointer; }
+    .pin-row input { width: 19px; height: 19px; accent-color: var(--accent); flex-shrink: 0; }
+    .pin-row span { font-size: 14px; color: var(--ink); }
+    .pin-row .sub { font-size: 12px; color: var(--muted); }
+    .cat-note { font-size: 12px; color: var(--muted); font-weight: 400; }
+    .cat-pick { display: flex; flex-wrap: wrap; gap: 7px; }
+    .cat { border: 1.5px solid var(--line); background: var(--card); border-radius: 999px; padding: 6px 11px; font-size: 13px; color: var(--ink); cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+    .cat.active { font-weight: 600; border-color: transparent; }
+    .cat .swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .cat .cat-x { display: none; margin-left: 4px; color: #C0392B; font-weight: 700; font-size: 14px; }
+    #cat-pick.managing .cat .cat-x { display: inline; }
+    .cat.cat-manage, .cat.cat-add { color: var(--accent); border-color: var(--accent); }
+    .cat-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .cat-add-panel { margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+    .cat-panel-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 9px; }
+    .cat-add-panel input { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 15px; font-family: inherit; color: var(--ink); background: var(--bg); margin-bottom: 10px; }
+    .cat-colors { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .cat-colors .cc { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
+    .cat-colors .cc.on { border-color: var(--ink); }
+    .cat-add-btns { display: flex; gap: 8px; }
+    .btn-mini { border: none; border-radius: 9px; padding: 9px 16px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; background: var(--accent); color: #fff; }
+    .btn-mini.ghost { background: var(--bg); color: var(--ink); border: 1.5px solid var(--line); }
+  </style>
 </head>
+
 <body>
-<div class="wrap">
-  <div class="eyebrow">오늘 뭐 해먹지?</div>
-  <h1>우리집 냉장고 식단 도우미</h1>
-  <p class="sub">재료를 골라 누르면, 믿을 수 있는 출처를 바탕으로 건강한 식단을 추천해요</p>
+  <div class="app">
+    <header class="header">
+      <div class="head-row"><h1>우리 가족 스케줄</h1><button class="hist-btn" onclick="openHistory()">🕘 수정내역</button></div>
+      <div class="date" id="today">날짜 불러오는 중…</div>
+    </header>
 
-  <!-- ── 홈(추천) 탭 ─────────────────────────── -->
-  <div id="tab-home" class="tab show">
-    <div class="board">
-      <div class="stitle"><span>🧲 내 재료 저장고 <button class="iinfo" onclick="showInfo('pantry')" aria-label="설명">ⓘ</button></span>
-        <button class="btn ghost" id="editBtn" onclick="toggleEdit()">편집</button></div>
-      <div class="hint" id="pantryHint"></div>
-      <div class="chips" id="pantry"></div>
-      <div class="row">
-        <input id="newIng" placeholder="새 재료 등록 (예: 소고기) · 쉼표로 여러 개" enterkeyhint="done">
-        <button class="btn green" onclick="addIng()">등록</button>
+    <!-- 최근 수정 내역 -->
+    <div class="modal" id="hist-modal">
+      <div class="sheet">
+        <div class="sheet-title">최근 수정 내역</div>
+        <div class="who-ask">이 폰은 누구세요? <span class="who-sub">(수정한 사람으로 기록돼요)</span>
+          <div class="who-btns">
+            <button class="who-b" data-w="dad" onclick="setDeviceWho('dad')">아빠</button>
+            <button class="who-b" data-w="mom" onclick="setDeviceWho('mom')">엄마</button>
+          </div>
+        </div>
+        <div class="hist-list" id="hist-list"></div>
+        <div class="sheet-btns"><button class="btn btn-cancel" onclick="closeHistory()">닫기</button></div>
       </div>
     </div>
 
-    <div class="cats" id="cats"></div>
-    <div class="stagebox" id="stagebox" style="display:none">
-      <div class="hint" style="margin-bottom:8px">아이 개월수에 맞는 단계를 골라주세요</div>
-      <div class="stages" id="stages"></div>
-    </div>
-    <button class="toggle on" id="healthyBtn" onclick="toggleHealthy()">🥗 <b style="font-family:'Jua'">건강식 우선</b>&nbsp;켜짐</button>
+    <main class="content">
+      <section class="screen active" id="screen-daily">
+        <div class="screen-title" id="daily-title">데일리 · 오늘</div>
+        <div class="people" id="people">
+          <button class="person active" data-person="all"   onclick="pickPerson(this)">전체</button>
+          <button class="person"        data-person="dad"   onclick="pickPerson(this)">아빠</button>
+          <button class="person"        data-person="mom"   onclick="pickPerson(this)">엄마</button>
+          <button class="person"        data-person="child" onclick="pickPerson(this)">딸</button>
+        </div>
+        <div class="clock-card"><div id="daily-clock"></div><div class="legend" id="daily-legend"></div></div>
+        <div class="list" id="daily-list"></div>
+      </section>
 
-    <div style="display:flex; gap:8px; margin-bottom:4px; align-items:center">
-      <span class="hint" style="margin:0">추천 방식</span>
-      <button class="iinfo" onclick="showInfo('mode')" aria-label="모드 설명">ⓘ</button>
-    </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px">
-      <button class="modebtn" id="modeFast" onclick="setMode('fast')">
-        <div style="font-size:18px">⚡</div><div style="font-family:'Jua'; font-size:14px">빠른 모드</div>
-        <div style="font-size:11px; color:var(--soft)">무료로 넉넉히</div>
+      <section class="screen" id="screen-week">
+        <div class="screen-title" id="week-title">주간 · 이번 주</div>
+        <div class="people" id="week-people">
+          <button class="person active" data-person="all"   onclick="pickWeekPerson(this)">전체</button>
+          <button class="person"        data-person="dad"   onclick="pickWeekPerson(this)">아빠</button>
+          <button class="person"        data-person="mom"   onclick="pickWeekPerson(this)">엄마</button>
+          <button class="person"        data-person="child" onclick="pickWeekPerson(this)">딸</button>
+        </div>
+        <div class="clock-card"><div class="week-evs" id="week-events"></div><div id="week-chart"></div><div class="legend" id="week-legend"></div></div>
+        <div class="hint">예외를 넣은 날은 그 요일 칸만 다르게 보여요.</div>
+      </section>
+
+      <section class="screen" id="screen-month">
+        <div class="screen-title">월간 · 달력</div>
+        <div class="cal-head">
+          <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+          <div class="cal-title" id="cal-title"></div>
+          <button class="cal-nav" onclick="changeMonth(1)">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="day-detail" id="day-detail"></div>
+      </section>
+    </main>
+
+    <nav class="tabbar">
+      <button class="tab active" id="tab-daily" onclick="switchTab('daily')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>데일리
       </button>
-      <button class="modebtn" id="modePro" onclick="setMode('pro')">
-        <div style="font-size:18px">🔎</div><div style="font-family:'Jua'; font-size:14px">정밀 모드</div>
-        <div style="font-size:11px; color:var(--soft)">출처 검색·사용량↑</div>
+      <button class="tab" id="tab-week" onclick="switchTab('week')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M9 5v14M15 5v14"/></svg>주간
       </button>
-    </div>
-    <div class="cta" style="display:none"></div>
-    <button class="cta" id="goBtn" onclick="recommend()">🍚 유아식 추천받기</button>
-    <div id="error"></div>
-    <div id="sortbar" class="sortbar" style="display:none"></div>
-    <div id="results"></div>
-    <div id="grounded"></div>
-  </div>
+      <button class="tab" id="tab-month" onclick="switchTab('month')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>월간
+      </button>
+    </nav>
 
-  <!-- ── 주간 식단표 탭 ──────────────────────── -->
-  <div id="tab-plan" class="tab">
-    <div class="card">
-      <div class="stitle">📅 1주일 식단표 <button class="iinfo" onclick="showInfo('plan')" aria-label="설명">ⓘ</button></div>
-      <div class="hint">질리지 않게 + 영양 골고루, 아침·점심·저녁 일주일 식단을 한 번에 짜드려요. 이 폰에 저장돼요.</div>
-      <div class="hint" style="margin-top:6px">🚫 빼고 싶은 재료 (알레르기·비선호) — 추천 탭에도 함께 적용돼요</div>
-      <div class="chips" id="dislikes" style="margin-bottom:10px"></div>
-      <div class="row" style="margin-top:0; margin-bottom:12px">
-        <input id="newDis" placeholder="예: 생선, 오이 · 쉼표로 여러 개" enterkeyhint="done">
-        <button class="btn green" onclick="addDislike()">추가</button>
-      </div>
-      <button class="toggle on" id="planBabyBtn" onclick="togglePlanBaby()">👶 <b style="font-family:'Jua'">유아식 포함</b>&nbsp;켜짐</button>
-      <button class="toggle on" id="planPantryBtn" onclick="togglePlanPantry()">🧲 <b style="font-family:'Jua'">저장고 재료 우선</b>&nbsp;켜짐</button>
-      <button class="toggle on" id="planAvoidBtn" onclick="togglePlanAvoid()">📒 <b style="font-family:'Jua'">내 메뉴와 안 겹치게</b>&nbsp;켜짐</button>
-      <button class="cta" id="planBtn" onclick="recommendWeek()">📅 1주일 식단표 만들기</button>
-      <div id="planError"></div>
-    </div>
-    <div id="planResult"></div>
-  </div>
+    <button class="fab" onclick="openAdd()" aria-label="일정 추가">＋</button>
 
-  <!-- ── 내 메뉴 탭 ──────────────────────────── -->
-  <div id="tab-menu" class="tab">
-    <div class="card">
-      <div class="stitle">📒 내 메뉴 <button class="iinfo" onclick="showInfo('mymenu')" aria-label="설명">ⓘ</button></div>
-      <div class="hint">자주 먹는 음식을 직접 추가하거나, 추천에서 ★로 저장하세요 · 이 폰에 계속 저장돼요</div>
-      <div class="row" style="margin-top:4px">
-        <select id="menuCat" style="width:110px"></select>
-        <input id="menuName" placeholder="예: 소고기미역국" enterkeyhint="done">
-        <button class="btn green" onclick="addMenu()">추가</button>
+    <div class="modal" id="modal">
+      <div class="sheet">
+        <h3 id="sheet-title">새 일정</h3>
+        <div class="form-msg" id="form-msg"></div>
+        <div class="edit-note" id="edit-note" style="display:none"></div>
+        <div class="field">
+          <label>누구</label>
+          <div class="who-pick" id="who-pick">
+            <button class="person" data-person="dad"   onclick="pickFormWho(this)">아빠</button>
+            <button class="person" data-person="mom"   onclick="pickFormWho(this)">엄마</button>
+            <button class="person" data-person="child" onclick="pickFormWho(this)">딸</button>
+          </div>
+        </div>
+        <div class="field"><label>무엇을</label><input type="text" id="f-title" placeholder="예: 병원 예약, 미용실" /></div>
+        <div class="field"><label>종류 <span class="cat-note">(자동, 이상하면 직접 선택)</span></label>
+          <div class="cat-pick" id="cat-pick"></div>
+          <div class="cat-hint" id="cat-hint"></div>
+          <div class="cat-add-panel" id="cat-add-panel" style="display:none">
+            <div class="cat-panel-title" id="cat-panel-title">새 종류 만들기</div>
+            <input type="text" id="cat-new-name" placeholder="종류 이름 (예: 산책, 병원)" />
+            <div class="cat-colors" id="cat-colors"></div>
+            <div class="cat-add-btns"><button class="btn-mini" onclick="saveCatPanel()">저장</button><button class="btn-mini ghost" onclick="closeCatPanel()">취소</button></div>
+          </div>
+        </div>
+        <div class="times">
+          <div class="field"><label>시작</label><input type="time" id="f-start" /></div>
+          <div class="field"><label>끝</label><input type="time" id="f-end" /></div>
+        </div>
+        <div class="field" id="scope-field">
+          <label>언제 적용할까요?</label>
+          <div class="scope-pick" id="scope-pick">
+            <button class="scope" data-scope="day"      onclick="pickScope(this)">이 날짜만</button>
+            <button class="scope" data-scope="weekFrom" onclick="pickScope(this)">이 주</button>
+            <button class="scope" data-scope="month"    onclick="pickScope(this)">이 달</button>
+            <button class="scope" data-scope="year"     onclick="pickScope(this)">올해</button>
+            <button class="scope" data-scope="dates"    onclick="pickScope(this)">직접 선택</button>
+            <button class="scope" data-scope="base"     onclick="pickScope(this)">매일</button>
+          </div>
+          <div class="scope-hint" id="scope-hint"></div>
+          <div class="minical" id="minical" style="display:none"></div>
+        </div>
+        <label class="pin-row"><input type="checkbox" id="f-pin" /><span>월간 달력에 표시 <span class="sub">(중요 일정)</span></span></label>
+        <div class="sheet-btns">
+          <button class="btn btn-cancel" onclick="closeModal()">취소</button>
+          <button class="btn btn-del" id="btn-del" onclick="deleteItem()" style="display:none">삭제</button>
+          <button class="btn btn-save" onclick="saveForm()">저장</button>
+        </div>
+        <button class="btn-gcal" onclick="addToGoogleCalendar()">구글 캘린더에 추가</button>
       </div>
-    </div>
-    <div id="menuList"></div>
-  </div>
-
-  <!-- ── 설정 탭 ────────────────────────────── -->
-  <div id="tab-set" class="tab">
-    <div class="card">
-      <div class="stitle">🔑 Gemini API 키</div>
-      <div class="hint">한 번 저장하면 이 폰에 계속 저장돼요. 키는 이 기기 밖으로 나가지 않아요(구글 API 호출에만 사용).<br>
-        발급: <a href="https://aistudio.google.com" target="_blank" style="color:var(--leaf)">aistudio.google.com</a> → Get API key (무료)<br>
-        <a href="javascript:void(0)" onclick="showInfo('apikey')" style="color:var(--accent)"><b>📱 API 키 발급 방법 (그림으로 보기)</b></a><br>
-        <a href="javascript:void(0)" onclick="showInfo('keysec')" style="color:var(--leaf)"><b>🔒 키는 안전한가요? (해킹 걱정 Q&A)</b></a></div>
-      <div class="row" style="margin-top:4px">
-        <input id="apiKey" type="password" placeholder="AIza... 키 붙여넣기">
-        <button class="btn green" onclick="saveKey()">저장</button>
-      </div>
-      <div class="hint" id="keyStatus" style="margin-top:8px"></div>
-      <div class="row">
-        <select id="modelSel">
-          <option value="gemini-2.5-flash">gemini-2.5-flash (기본)</option>
-          <option value="gemini-3.5-flash">gemini-3.5-flash</option>
-          <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="stitle">📚 출처 라이브러리 <button class="iinfo" onclick="showInfo('sources')" aria-label="설명">ⓘ</button></div>
-      <div class="hint">먼저 참고할 유튜브·블로그·사이트·기관 자료 — 이 폰에 저장돼요.<br>💡 메인 주소보다 <b>글·영상 하나의 링크</b>가 더 정확해요.</div>
-      <div id="srcTabs" style="display:flex; gap:6px; margin-bottom:10px"></div>
-      <div id="srcList"></div>
-      <div class="row">
-        <input id="srcName" placeholder="이름 (예: OO요리 유튜브)">
-      </div>
-      <div class="row">
-        <input id="srcUrl" placeholder="URL (선택)">
-        <button class="btn green" onclick="addSrc()">추가</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="stitle">🧠 AI 지시문 커스텀 <button class="iinfo" onclick="showInfo('prompts')" aria-label="설명">ⓘ</button></div>
-      <div class="hint">추천할 때 AI에게 보내는 지시문이에요. 기본값이 있고, 원하는 대로 다듬을 수 있어요. 수정한 것도 폰에 저장돼요.</div>
-      <div class="row" style="margin-top:4px">
-        <select id="pSel" onchange="renderPromptEditor()">
-          <option value="유아식">🍚 유아식 지시</option>
-          <option value="어른식">🍲 어른식 지시</option>
-          <option value="간식">🍪 간식 지시</option>
-          <option value="건강식">🥗 건강식 우선 지시</option>
-          <option value="식단표">📅 주간 식단표 원칙</option>
-        </select>
-      </div>
-      <div class="row"><textarea id="pText"></textarea></div>
-      <div class="row">
-        <button class="btn green" style="flex:1" onclick="savePrompt()">저장</button>
-        <button class="btn ghost" style="flex:1" onclick="resetPrompt()">기본값 복원</button>
-      </div>
-      <div class="hint" id="pStatus" style="margin-top:8px"></div>
-      <button class="btn ghost" style="width:100%" onclick="previewPrompt()">🔎 실제 전송되는 전체 프롬프트 미리보기</button>
-    </div>
-
-    <div class="card">
-      <div class="stitle">🧹 데이터 <button class="iinfo" onclick="showInfo('data')" aria-label="설명">ⓘ</button></div>
-      <div class="hint">모든 데이터(키·재료·메뉴·출처·식단표)는 <b>이 폰의 이 브라우저 안에만</b> 저장돼요. 다른 브라우저·다른 폰과는 공유되지 않아요. 자세한 저장 위치·주의사항은 ⓘ를 눌러주세요.</div>
-      <div class="row">
-        <button class="btn green" style="flex:1" onclick="exportData()">⬇️ 내보내기(백업)</button>
-        <button class="btn green" style="flex:1" onclick="document.getElementById('importFile').click()">⬆️ 불러오기</button>
-      </div>
-      <input id="importFile" type="file" accept="application/json,.json" style="display:none" onchange="importData(event)">
-      <div class="hint" id="ioStatus" style="margin-top:8px"></div>
-      <button class="btn ghost" style="width:100%; margin-top:6px" onclick="resetAll()">전체 초기화</button>
     </div>
   </div>
 
-  <div class="footer">AI 추천이라 재료·간·질감은 아이에게 맞게 한 번 더 확인해 주세요.<br>
-    12개월 미만은 꿀·소금·설탕을 피하고, 새 재료는 하나씩 천천히요.</div>
-</div>
+  <!-- Firebase (두 폰 실시간 공유) SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
 
-<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeInfo()">
-  <div class="sheet" role="dialog" aria-modal="true">
-    <h3 id="mTitle"></h3>
-    <div id="mBody"></div>
-    <button class="btn green" style="width:100%;margin-top:6px" onclick="closeInfo()">닫기</button>
-  </div>
-</div>
+  <script>
+    /* ============================================================
+       ★★ 여기 두 곳만 채우면 두 폰이 실시간으로 같이 써져요 ★★
+       ------------------------------------------------------------
+       1) firebaseConfig : Firebase 홈페이지에서 복사한 값을 붙여넣기
+          (databaseURL 이 꼭 들어가 있어야 해요)
+       2) FAMILY_CODE   : 두 분만 아는 비밀 문자열. 두 폰에 똑같이!
 
-<nav class="nav">
-  <button id="nav-home" class="on" onclick="go('home')"><span class="ni">🍳</span>추천</button>
-  <button id="nav-plan" onclick="go('plan')"><span class="ni">📅</span>식단표</button>
-  <button id="nav-menu" onclick="go('menu')"><span class="ni">📒</span>내 메뉴</button>
-  <button id="nav-set" onclick="go('set')"><span class="ni">⚙️</span>설정</button>
-</nav>
-
-<script>
-// ── 상태 + 폰 저장(localStorage) ─────────────────────────────
-const CATS = {
-  "유아식": {emoji:"🍚", sub:"이유식·아이밥"},
-  "어른식": {emoji:"🍲", sub:"한 끼 식사"},
-  "간식":   {emoji:"🍪", sub:"온 가족 간식"},
-};
-const STAGES = ["초기 (4~6개월)","중기 (7~8개월)","후기 (9~11개월)","완료기 (12~15개월)","유아식 (16개월~)"];
-const SEED_PANTRY = ["계란","밥","두부","당근","감자","양파","애호박","김","멸치","치즈","우유","바나나","시금치","닭가슴살","브로콜리","고구마"];
-const SEED_SOURCES = {
-  "유아식":[
-    {name:"질병관리청 국가건강정보포털(이유식·영유아 영양)", url:"https://health.kdca.go.kr"},
-    {name:"키작은엄마의 성장이유식", url:"https://www.youtube.com/@%ED%82%A4%EC%9E%91%EC%9D%80%EC%97%84%EB%A7%88%EC%84%B1%EC%9E%A5%EC%9D%B4%EC%9C%A0%EC%8B%9D"},
-    {name:"강미즈 이유식 레시피", url:"https://www.youtube.com/@kangMSrecipe"},
-    {name:"푸린 poorin 이유식", url:"https://www.youtube.com/@%ED%91%B8%EB%A6%B0poorin"},
-    {name:"도서 『안심 튼튼 이유식』", url:""},
-    {name:"도서 『하하하 유아식』", url:""},
-    {name:"유튜브: 소아과 의사 채널(우리어린이)", url:"https://www.youtube.com/@woorikidss"},
-  ],
-  "어른식":[
-    {name:"간단한끼 요오리 레시피", url:"https://www.youtube.com/@cookduck"},
-    {name:"서정아의 건강밥상 SweetPeaPot", url:"https://www.youtube.com/@SweetPeaPot"},
-    {name:"만개의레시피 10K Recipe", url:"https://www.youtube.com/@%EB%A7%8C%EA%B0%9C%EC%9D%98%EB%A0%88%EC%8B%9C%ED%94%BC"},
-    {name:"일등감의 쉬운 레시피", url:"https://www.youtube.com/@%EC%9D%BC%EB%93%B1%EA%B0%90%EC%9D%98%EC%89%AC%EC%9A%B4%EB%A0%88%EC%8B%9C%ED%94%BC"},
-    {name:"만개의레시피(사이트)", url:"https://www.10000recipe.com"},
-    {name:"우리의식탁 wtable", url:"https://wtable.co.kr"},
-    {name:"새미네부엌", url:"https://semie.cooking"},
-  ],
-  "간식":[
-    {name:"간단한끼 요오리 레시피", url:"https://www.youtube.com/@cookduck"},
-    {name:"서정아의 건강밥상 SweetPeaPot", url:"https://www.youtube.com/@SweetPeaPot"},
-    {name:"만개의레시피 10K Recipe", url:"https://www.youtube.com/@%EB%A7%8C%EA%B0%9C%EC%9D%98%EB%A0%88%EC%8B%9C%ED%94%BC"},
-    {name:"일등감의 쉬운 레시피", url:"https://www.youtube.com/@%EC%9D%BC%EB%93%B1%EA%B0%90%EC%9D%98%EC%89%AC%EC%9A%B4%EB%A0%88%EC%8B%9C%ED%94%BC"},
-    {name:"만개의레시피(사이트)", url:"https://www.10000recipe.com"},
-    {name:"우리의식탁 wtable", url:"https://wtable.co.kr"},
-    {name:"새미네부엌", url:"https://semie.cooking"},
-  ],
-};
-function load(k, d){ try{ const v = localStorage.getItem("mp_"+k); return v===null ? d : JSON.parse(v); }catch(e){ return d; } }
-
-// ── 에러를 사람 말로 번역 ─────────────────────────────────────
-function friendlyError(msg){
-  const m = String(msg||"");
-  if(/Failed to fetch|NetworkError|Load failed/i.test(m))
-    return {t:"인터넷 연결이 불안정해요", d:"회사·기관 와이파이면 막혀 있을 수 있어요. 폰 데이터(LTE·5G)로 바꿔서 다시 해보세요."};
-  if(/50[0-9]|high demand|overloaded|UNAVAILABLE/i.test(m))
-    return {t:"지금 이용자가 많아요", d:"구글 AI 서버가 잠시 붐비는 중이에요. 30초쯤 뒤에 다시 눌러주세요."};
-  if(/429|quota|rate|RESOURCE_EXHAUSTED/i.test(m))
-    return {t:"오늘 무료 사용량을 다 썼어요", d:"무료 한도를 넘었어요. 내일 다시 되거나, 설정에서 다른 키를 넣으면 돼요."};
-  if(/400|API key|API_KEY|invalid|PERMISSION|401|403/i.test(m))
-    return {t:"API 키를 확인해 주세요", d:"키가 틀렸거나 만료됐을 수 있어요. 설정 탭에서 키를 다시 저장해 보세요."};
-  if(/형식|JSON|parse|Expected/i.test(m))
-    return {t:"결과를 정리하다 살짝 꼬였어요", d:"재료를 조금 줄이거나 한 번만 다시 눌러주세요."};
-  return {t:"잠시 문제가 있었어요", d:"한 번만 다시 시도해 주세요. 계속되면 조금 뒤에 열어주세요."};
-}
-function errorBox(msg){
-  const e = friendlyError(msg);
-  return `<div class="err"><b>${e.t}</b><br>${e.d}</div>`;
-}
-
-// ── 자동 재시도 fetch (503·일시 오류 시 조용히 2회 재시도) ──────
-async function fetchAI(url, body){
-  let lastErr;
-  for(let i=0;i<3;i++){
-    try{
-      const res = await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-      if(res.ok) return res;
-      const t = await res.text();
-      lastErr = new Error(`HTTP ${res.status} — ${t.slice(0,180)}`);
-      // 503/429 등 일시 오류만 재시도, 키 오류(400/401/403)는 즉시 중단
-      if(![429,500,502,503,504].includes(res.status)) throw lastErr;
-    }catch(e){
-      lastErr = e;
-      if(!/Failed to fetch|NetworkError|HTTP (429|5\d\d)/i.test(String(e.message||e))) throw e;
-    }
-    if(i<2) await new Promise(r=>setTimeout(r, 1500*(i+1))); // 1.5초, 3초 대기 후 재시도
-  }
-  throw lastErr;
-}
-
-// ── 관대한 JSON 배열 파서 (형식이 살짝 어긋나도 복구) ───────────
-function parseDishes(text){
-  const s = text.indexOf("["), e = text.lastIndexOf("]");
-  // 1) 정상 시도
-  if(s>=0 && e>s){ try{ return JSON.parse(text.slice(s,e+1)); }catch(_){} }
-  // 2) 흔한 오염 제거 후 재시도 (코드펜스, 후행 콤마)
-  if(s>=0 && e>s){
-    let t = text.slice(s,e+1).replace(/```json|```/g,"").replace(/,\s*([}\]])/g,"$1");
-    try{ return JSON.parse(t); }catch(_){}
-  }
-  // 3) 잘렸거나 배열이 안 닫힌 경우: 완결된 객체만 회수
-  const start = s>=0 ? s+1 : 0;
-  const rest = text.slice(start);
-  const items=[]; let depth=0, cur="", inStr=false, esc=false;
-  for(const ch of rest){
-    if(inStr){ cur+=ch; if(esc){esc=false;} else if(ch==="\\"){esc=true;} else if(ch==='"'){inStr=false;} continue; }
-    if(ch==='"'){ inStr=true; cur+=ch; continue; }
-    if(ch==="{"){ if(depth===0) cur=""; depth++; cur+=ch; }
-    else if(ch==="}"){ depth--; cur+=ch; if(depth===0){ try{ items.push(JSON.parse(cur.replace(/,\s*([}\]])/g,"$1"))); }catch(_){} } }
-    else if(depth>0){ cur+=ch; }
-  }
-  if(items.length) return items;
-  throw new Error("형식 오류");
-}
-
-// ── 유사 재료 감지 (표기 차이 합치기) ─────────────────────────
-const SYNONYM_GROUPS = [
-  ["낫또","나또","낫토","나토"],
-  ["달걀","계란"],
-  ["대파","파"],
-  ["돼지고기","돈육"],
-  ["소고기","쇠고기","우육"],
-  ["토마토","방울토마토"],
-  ["새우","대하"],
-];
-function normIng(s){ return String(s).toLowerCase().replace(/\s|·/g,""); }
-function similarIngredient(name, list){
-  const n = normIng(name);
-  // 1) 동의어 그룹
-  const grp = SYNONYM_GROUPS.find(g=>g.map(normIng).includes(n));
-  if(grp){ const hit=list.find(x=>grp.map(normIng).includes(normIng(x))); if(hit) return hit; }
-  // 2) 표기 근접(받침·글자 하나 차이)
-  for(const x of list){
-    const m=normIng(x);
-    if(m===n) return x;
-    if(Math.abs(m.length-n.length)<=1 && (m.includes(n)||n.includes(m)) && Math.min(m.length,n.length)>=2) return x;
-  }
-  return null;
-}
-
-// ── 기능 설명 ────────────────────────────────────────────────
-const INFO = {
-  pantry: {t:"🧲 내 재료 저장고", b:`
-    <p>집에 있는 재료를 한 번 등록해두면 <b>이 폰에 계속 저장</b>돼요. 다음부터는 타이핑 없이 눌러서 선택(✓)만 하면 됩니다.</p>
-    <p><b>한글·영어 아무거나 괜찮아요.</b> "계란"도 "egg"도, "그릭요거트" 같은 상품명도 AI가 알아들어요. 쉼표로 여러 개를 한 번에 등록할 수 있어요.</p>
-    <p>'편집'을 누르면 ✕로 저장고에서 뺄 수 있어요.</p>`},
-  mode: {t:"⚡🔎 빠른 모드 vs 정밀 모드", b:`
-    <p>추천할 때 <b>AI가 인터넷을 검색하느냐</b>의 차이예요.</p>
-    <p><b>⚡ 빠른 모드 (기본)</b><br>
-    인터넷을 안 보고, AI가 아는 지식으로 <b>검증된 정석 레시피</b>를 빠르게 추천해요. 무료 사용량을 거의 안 써서 <b>하루에 넉넉히</b> 쓸 수 있어요. 출처는 요리명으로 만든 <b>레시피 검색 링크</b>(만개의레시피·구글)로 대신하고, "인기 있다" 같은 확인 못 하는 평가는 하지 않아요. 평소 "이 재료로 뭐 해먹지?"엔 이걸로 충분해요.</p>
-    <p><b>🔎 정밀 모드</b><br>
-    <b>설정 → 📚 출처 라이브러리에 등록해둔 채널·블로그</b>(백종원·강미즈 등)를 <b>실제로 검색</b>해 실존 레시피와 진짜 출처 링크를 가져와요. 검색을 꼭 필요한 만큼만(최대 2회) 쓰도록 최적화해서 예전보다 사용량이 줄었지만, 그래도 빠른 모드보다는 <b>무료 사용량을 더 써요</b>. "이번엔 진짜 그 채널 레시피대로 보고 싶다" 할 때 켜세요. (출처를 안 넣었으면 효과가 약하니, 설정에서 좋아하는 채널·블로그를 먼저 등록해두세요.)</p>
-    <p>💡 평소엔 빠른 모드, 특정 채널 레시피가 필요할 때만 정밀 모드 — 이렇게 쓰면 무료로 오래 써요.</p>`},
-  healthy: {t:"🥗 건강식 우선", b:`
-    <p>켜면 AI에게 <b>영양 균형을 최우선</b>으로 추천하라고 지시해요 — 신선한 채소·통곡물·양질의 단백질 위주로 구성하고, 튀김·과한 나트륨·설탕은 피하게 돼요. 각 요리에 건강 포인트(🥗) 한 줄도 함께 달아줘요.</p>
-    <p>끄면 이 제약이 빠져서 같은 재료라도 좀 더 자유로운 메뉴(전, 튀김 등)가 나올 수 있어요. "오늘은 그냥 맛있는 거!" 싶은 날 꺼보세요.</p>
-    <p>단, 유아식의 안전 규칙(12개월 미만 꿀·소금·설탕 금지, 단계별 농도)은 <b>꺼도 항상 지켜져요.</b></p>`},
-  "유아식": {t:"🍚 유아식 · 이유식", b:`
-    <p>아이 개월수 단계에 맞춰 <b>농도와 입자 크기</b>를 조절한 이유식·아이밥을 추천해요. 초기(4~6개월)부터 유아식(16개월~)까지 단계를 고를 수 있어요.</p>
-    <p>안전 규칙이 항상 적용돼요: 12개월 미만에게 꿀·소금·설탕 금지, 간은 최소화, 자극적이지 않게.</p>
-    <p>같은 개월수라도 아이마다 발달이 달라요. 새 재료는 하나씩 천천히 시도하고, 알레르기 반응을 살펴봐 주세요.</p>`},
-  "어른식": {t:"🍲 어른식 · 한 끼 식사", b:`
-    <p>육아 중에도 만들 수 있게 <b>20~30분 안에 완성되는 한 끼</b>를 추천해요. 밥반찬·국/찌개·한그릇요리 등 다양하게 나와요.</p>
-    <p>'건강식 우선'이 켜져 있으면 고단백·채소 위주로, 튀김·과한 나트륨·설탕은 피해서 골라줘요.</p>`},
-  "간식": {t:"🍪 간식 · 온 가족", b:`
-    <p>아이와 어른이 <b>함께 먹을 수 있는</b> 간단한 간식을 추천해요. 너무 달지 않고 손이 덜 가는 것 위주예요.</p>
-    <p>아이 몫은 개월수에 따라 잘게 잘라주는 등 한 번 더 확인해 주세요.</p>`},
-  scores: {t:"📊 점수와 정렬", b:`
-    <p>추천된 요리마다 AI가 세 가지 기준으로 0~100점을 매겨요:</p>
-    <p><b>🥕 재료 활용도</b> — 오늘 고른 재료를 얼마나 많이·핵심적으로 쓰는지. 냉장고 털이가 목적이면 이 기준이 좋아요.<br>
-    <b>🥗 건강 점수</b> — 채소·단백질·나트륨·당까지 고려한 영양 균형.<br>
-    <b>⚡ 간편함</b> — 조리 시간이 짧고 단계·설거지가 적을수록 높아요.</p>
-    <p>위의 정렬 버튼을 누르면 그 기준의 높은 점수 순으로 🥇🥈🥉 순위가 바뀌어요.</p>
-    <p>단, 이 점수는 <b>AI의 판단이라 참고용</b>이에요. 절대적인 수치가 아니니 최종 선택은 직접 해주세요.</p>`},
-  sources: {t:"📚 출처 라이브러리", b:`
-    <p>AI가 <b>먼저 참고할 곳</b>을 등록해두는 곳이에요. 카테고리별로 관리돼요.</p>
-    <p><b>URL이면 다 돼요</b> — 유튜브, 블로그, 레시피 사이트, 논문, 기관 자료(식약처 등). AI가 글자를 읽어서 참고하니 <b>글로 잘 정리된 페이지일수록 정확</b>해요.</p>
-    <p><b>추천이 만들어지는 순서 (정밀 모드)</b><br>
-    1️⃣ 등록한 인물·채널 이름 + 재료로 <b>웹 전체를 한 번에 검색</b> (영상·블로그 다 걸림)<br>
-    2️⃣ 마땅한 게 없을 때만 레시피 사이트에서 한 번 더<br>
-    3️⃣ <b>실제로 존재하는 요리만</b> 추천 (조합 창작 안 함 · 🧩 참고 흐름·🔗 링크로 근거 표시)</p>
-    <p><b>더 정확하게 쓰는 법</b><br>
-    · 메인 주소보다 <b>레시피 글·영상 하나의 링크</b>를 넣기<br>
-    · 맛·레시피는 좋아하는 채널·블로그, <b>영양·건강 근거는 식약처·질병관리청 같은 기관</b> 링크로</p>`},
-  mymenu: {t:"📒 내 메뉴", b:`
-    <p>우리집 <b>단골 음식 노트</b>예요. 두 가지로 채워져요:</p>
-    <p>① 추천 결과에서 <b>☆를 누르면</b> 저장돼요. 출처 링크도 함께 저장돼서 나중에 만드는 법을 다시 열어볼 수 있어요.<br>
-    ② AI와 무관하게 <b>자주 해먹는 음식을 직접 추가</b>할 수 있어요 (예: 소고기미역국). 분류를 골라서요.</p>
-    <p>"오늘 뭐 해먹지" 할 때 추천을 돌리지 않고 바로 꺼내 보는 즐겨찾기 용도예요. 폰에 계속 저장돼요.</p>
-    <p><b>🚫 추천 제외 / ✅ 추천 포함</b> — 각 메뉴 옆 버튼으로 정해요. <b>기본은 '추천 제외'</b>라, 저장한 요리는 추천에 안 나오고 <b>매번 새로운 요리</b>를 만나게 돼요. 자주 해먹어서 또 나와도 좋은 메뉴는 '✅ 추천 포함'으로 바꾸면 돼요. (같은 카테고리 추천에만 적용돼요.)</p>`},
-  plan: {t:"📅 1주일 식단표", b:`
-    <p>월~일 7일치, <b>아침·점심·저녁</b>이 있는 급식표 스타일 식단(유아식·어른식·간식)을 한 번에 짜줘요. 두 가지 원칙으로요:</p>
-    <p><b>① 질리지 않게</b> — 일주일 안에 같은 요리를 반복하지 않고, 주재료와 조리법(볶음/국/찜/구이…)을 돌려가며 배치해요.<br>
-    <b>② 영양 골고루</b> — 단백질원과 채소를 주 단위로 순환시키고, <b>날마다 탄:단:지 비율과 선정 근거(📊)</b>를 함께 보여줘요. 비율은 AI의 대략적 추정이라 참고용이에요.</p>
-    <p><b>🚫 빼고 싶은 재료</b>에 생선처럼 싫어하거나 알레르기 있는 재료를 등록하면, 식단표·추천·장보기 리스트 모두에서 빠져요. 폰에 저장돼서 계속 적용돼요.</p>
-    <p><b>출처 라이브러리도 반영돼요</b> — 등록한 채널·책·기관을 참고해서 그 스타일로 일주일 메뉴를 골라요(추천 탭과 동일). 정확도 팁도 출처 라이브러리 ⓘ에 있어요.</p>
-    <p><b>📒 내 메뉴와 안 겹치게</b> — 켜면 내 메뉴에 저장한(추천 제외로 둔) 요리는 식단표에도 안 나와서 늘 새로운 일주일이 돼요. 단골 메뉴가 식단에 섞여도 좋으면 끄면 돼요.</p>
-    <p><b>👶 유아식 포함</b>을 켜면 추천 탭에서 고른 개월수 단계에 맞는 <b>유아식 식단표</b>가 어른식 표와 별도로 만들어져요.<br>
-    <b>🧲 저장고 재료 우선</b>을 켜면 내 재료 저장고의 재료를 최대한 활용하고, 부족한 것만 🛒 장보기 리스트로 뽑아줘요.</p>
-    <p>각 표의 <b>🖼 이미지로 저장</b>을 누르면 PNG 그림파일로 저장돼요 — 냉장고에 붙이거나 가족에게 카톡으로 보내기 좋아요.</p>
-    <p>식단표는 폰에 저장돼서 언제든 다시 볼 수 있고, 새로 만들면 교체돼요.</p>`},
-  prompts: {t:"🧠 AI 지시문 커스텀", b:`
-    <p>추천을 누를 때 AI(Gemini)에게 보내는 <b>지시문(프롬프트)</b>이에요. 5가지를 각각 수정할 수 있어요: 유아식·어른식·간식 지시, 건강식 우선 지시, 주간 식단표 원칙.</p>
-    <p><b>예시:</b> 어른식 지시에 "매운 음식 제외", "국물 요리 위주로", "당뇨 식단 기준으로" 같은 문장을 덧붙이면 그대로 반영돼요.</p>
-    <p><b>알아둘 것 3가지:</b><br>
-    ① 유아식 지시의 <b>{단계}</b>는 자동으로 선택한 개월수 단계로 바뀌는 자리표시자예요 — 지우지 마세요.<br>
-    ② 출력 형식(JSON)과 점수 채점 규칙은 앱이 뒤에 자동으로 붙여요 — 신경 쓸 필요 없어요.<br>
-    ③ 유아식 <b>안전 규칙(12개월 미만 꿀·소금·설탕 금지)</b>은 지시문을 어떻게 고쳐도 항상 자동 적용돼요.</p>
-    <p>수정본은 폰에 저장되고, <b>기본값 복원</b>으로 언제든 되돌릴 수 있어요. '미리보기'로 실제 전송되는 전체 내용을 확인해 보세요.</p>`},
-  data: {t:"🧹 데이터 저장 위치·주의사항", b:`
-    <p>이 앱은 데이터를 파일이 아니라 <b>브라우저 내부 저장소(localStorage)</b>에 넣어요. 갤러리·파일 앱에는 안 보이고, 그 브라우저 안에만 있어요.</p>
-    <p><b>📱 안드로이드</b> — 브라우저 앱 내부 저장 공간에 있어요(루팅 없이는 접근 불가). 저장은 <b>브라우저 단위</b>라, 네이버 앱에서 저장한 건 크롬·삼성인터넷에선 안 보여요.</p>
-    <p><b>🍎 아이폰</b> — Safari(또는 그 앱)의 저장 영역에 있어요. 주의: 아이폰은 <b>오래 안 쓴 사이트의 데이터를 약 7일 뒤 자동 삭제</b>할 수 있어요. <b>'홈 화면에 추가'</b>로 아이콘 실행하면 대부분 예외 처리돼 오래 유지돼요.</p>
-    <p><b>🗑 사라지는 경우:</b> 브라우저 캐시·사이트 데이터 삭제 / 시크릿 모드 / 다른 브라우저·다른 폰으로 열기 / 전체 초기화.</p>
-    <p><b>💾 백업·기기 이동:</b> 자기 폰에만 있어 프라이버시엔 좋지만 자동 백업은 안 돼요. <b>'내보내기'</b>로 백업 파일을 저장해두고, 새 폰·다른 브라우저에서 <b>'불러오기'</b>하면 그대로 복원돼요. (백업 파일에는 API 키도 들어가니 아무 데나 올리지 마세요.)</p>`},
-  apikey: {t:"📱 API 키 발급 방법", b:`
-    <p>휴대폰으로 <b>1~2분이면</b> 무료로 받아요. 카드 등록 필요 없어요.</p>
-    <div style="margin:10px 0">
-      <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:12px">
-        <div style="min-width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; font-family:'Jua'; display:flex; align-items:center; justify-content:center">1</div>
-        <div><b>aistudio.google.com 접속</b><br><span style="font-size:12.5px; color:var(--soft)">구글 계정으로 로그인해요. 왼쪽 위 ☰ 메뉴를 열면 아래에 🔑(열쇠) 아이콘이 있어요 — 그걸 눌러요.</span></div>
-      </div>
-      <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:12px">
-        <div style="min-width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; font-family:'Jua'; display:flex; align-items:center; justify-content:center">2</div>
-        <div><b>오른쪽 위 'API 키 만들기' 탭</b><br><span style="font-size:12.5px; color:var(--soft)">'API 키' 화면이 열리면 우측 상단의 <b>+ API 키 만들기</b>(Create API key)를 눌러요.</span></div>
-      </div>
-      <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:12px">
-        <div style="min-width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; font-family:'Jua'; display:flex; align-items:center; justify-content:center">3</div>
-        <div><b>프로젝트 선택 후 '키 만들기'</b><br><span style="font-size:12.5px; color:var(--soft)">'새 키 만들기' 창이 뜨면 이름은 그대로 두고, 프로젝트를 하나 고른 뒤 <b>키 만들기</b>를 눌러요. (처음이면 프로젝트가 자동으로 하나 생겨요.)</span></div>
-      </div>
-      <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:12px">
-        <div style="min-width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; font-family:'Jua'; display:flex; align-items:center; justify-content:center">4</div>
-        <div><b>키 복사</b><br><span style="font-size:12.5px; color:var(--soft)">생성된 키 옆 📋(복사) 아이콘을 눌러 복사해요. <b>AQ.…</b> 또는 <b>AIza…</b> 로 시작하는 긴 문자예요.</span></div>
-      </div>
-      <div style="display:flex; gap:10px; align-items:flex-start">
-        <div style="min-width:26px; height:26px; border-radius:50%; background:var(--leaf); color:#fff; font-family:'Jua'; display:flex; align-items:center; justify-content:center">5</div>
-        <div><b>이 앱 설정에 붙여넣기</b><br><span style="font-size:12.5px; color:var(--soft)">여기 설정 탭의 <b>🔑 Gemini API 키</b> 칸에 붙여넣고 <b>저장</b>을 누르면 끝! 이 폰에 저장돼서 다음부턴 안 넣어도 돼요.</span></div>
-      </div>
-    </div>
-    <p style="font-size:12.5px"><b>💡 참고</b> · '결제 등급'이 <b>무료 등급</b>으로 보이면 정상이에요. 카드 안 넣으면 요금이 절대 안 나가요. 키는 남에게 보여주지 마세요.</p>`},
-  keysec: {t:"🔒 API 키, 안전한가요?", b:`
-    <p><b>결론: 안심하고 쓰셔도 돼요.</b> 이유는 이래요.</p>
-    <p>① 키는 <b>이 폰의 브라우저 안에만</b> 저장돼요. 이 앱은 서버가 없어서, 앱 제작자를 포함해 그 누구에게도 키가 전송되지 않아요.</p>
-    <p>② 추천을 누를 때만 키가 <b>구글 공식 API로 직접, 암호화(HTTPS)되어</b> 전송돼요. 중간에 거치는 곳이 없어요.</p>
-    <p>③ 무료 발급 키는 <b>카드가 연결돼 있지 않아요.</b> 만에 하나 노출돼도 돈이 빠져나가는 게 아니라, 무료 사용량이 소모되는 정도예요.</p>
-    <p>④ 걱정되면 언제든 <b>aistudio.google.com</b>에서 기존 키를 삭제하고 새로 만들면 돼요(30초).</p>
-    <p>지킬 것 하나: 키를 캡처하거나 채팅으로 공유하지 마세요. 비밀번호처럼 다루면 충분해요.</p>`},
-};
-function showInfo(key){
-  const i = INFO[key]; if(!i) return;
-  document.getElementById("mTitle").textContent = i.t;
-  document.getElementById("mBody").innerHTML = i.b;
-  document.getElementById("modalBg").classList.add("show");
-}
-function closeInfo(){ document.getElementById("modalBg").classList.remove("show"); }
-
-function save(k, v){ try{ localStorage.setItem("mp_"+k, JSON.stringify(v)); }catch(e){} }
-
-let S = {
-  key: load("key",""), model: load("model","gemini-2.5-flash"),
-  pantry: load("pantry", SEED_PANTRY.slice()),
-  selected: load("selected", []),
-  sources: load("sources", JSON.parse(JSON.stringify(SEED_SOURCES))),
-  menus: load("menus", []),
-  cat: load("cat","유아식"), stage: load("stage", STAGES[2]), healthy: load("healthy", true),
-  sort: load("sort","use"),
-  week: load("week", null), planBaby: load("planBaby", true), planPantry: load("planPantry", true),
-  planAvoid: load("planAvoid", true),
-  prompts: load("prompts", {}),
-  dislikes: load("dislikes", []),
-  mode: load("mode", "fast"),
-  edit:false, srcTab:"유아식", results:[], groundedList:[], loading:false,
-};
-const SORTS = { use:"🥕 재료 활용도순", health:"🥗 건강 점수순", ease:"⚡ 간편함순" };
-const DEFAULT_PROMPTS = {
-  "유아식": `위 재료로 만들 수 있는 "{단계}" 단계 이유식/유아식 3가지를 추천해줘.
-- 단계에 맞는 농도·입자 크기를 지켜줘.
-- 12개월 미만에게는 꿀·소금·설탕을 절대 쓰지 마. 간은 최소화.`,
-  "어른식": `위 재료로 20~30분 안에 되는 건강한 어른 한 끼 3가지를 추천해줘. 고단백·채소 위주로 다양하게.`,
-  "간식": `위 재료로 아이와 어른이 함께 즐길 간단한 간식 3가지를 추천해줘. 너무 달지 않게.`,
-  "건강식": `[건강식 우선] 영양 균형 최우선: 신선한 채소·통곡물·양질의 단백질을 쓰고 튀김·과한 나트륨·설탕은 피해줘.`,
-  "식단표": `[원칙 1 — 질리지 않게] 7일 안에 같은 요리를 절대 반복하지 말 것. 주재료와 조리법(볶음/국·탕/찜/구이/무침/한그릇)을 매일 다르게 순환할 것.
-[원칙 2 — 영양 골고루] 단백질원(소고기/돼지고기/닭/생선/달걀/두부·콩)을 주 단위로 고르게 배분하고, 매일 채소를 포함하며, 나트륨·당은 낮게. 튀김은 주 1회 이하.`,
-};
-function P(k){ const o = S.prompts && S.prompts[k]; return (typeof o==="string" && o.trim()) ? o : DEFAULT_PROMPTS[k]; }
-// 개별 글·영상 URL(읽을 가치 있음)과 채널 메인(읽어도 소득 적음) 구분
-function pickSpecificUrls(list){
-  return (list||[]).map(s=>s.url).filter(u=>/^https?:\/\//.test(u)).filter(u=>{
-    try{
-      const x=new URL(u), p=x.pathname;
-      if(/watch|shorts|\/recipe\/|\/post|\/entry|\/archives/.test(u)) return true;   // 영상·글 URL
-      if(p.startsWith("/@")||p==="/"||p==="") return false;                            // 채널 메인·루트
-      return p.length>15;                                                              // 긴 경로면 개별 글로 간주
-    }catch(_){ return false; }
-  });
-}
-
-
-// ── 탭 ──────────────────────────────────────────────────────
-function go(t){
-  ["home","plan","menu","set"].forEach(x=>{
-    document.getElementById("tab-"+x).classList.toggle("show", x===t);
-    document.getElementById("nav-"+x).classList.toggle("on", x===t);
-  });
-  window.scrollTo({top:0});
-}
-
-// ── 재료 저장고 ──────────────────────────────────────────────
-function renderPantry(){
-  const box = document.getElementById("pantry");
-  box.innerHTML = "";
-  S.pantry.forEach(ing=>{
-    const b = document.createElement("button");
-    const on = S.selected.includes(ing);
-    b.className = "chip" + (S.edit ? " del" : on ? " on" : "");
-    b.textContent = S.edit ? ing+" ✕" : (on ? "✓ "+ing : ing);
-    b.onclick = ()=>{
-      if(S.edit){
-        S.pantry = S.pantry.filter(x=>x!==ing);
-        S.selected = S.selected.filter(x=>x!==ing);
-        save("pantry",S.pantry); save("selected",S.selected);
-      }else{
-        S.selected = on ? S.selected.filter(x=>x!==ing) : [...S.selected, ing];
-        save("selected",S.selected);
-      }
-      renderPantry();
+       아직 안 채웠으면? 앱은 이 폰 안에만 저장되며 잘 돌아가요.
+       채우면 그때부터 두 폰이 같은 데이터를 실시간으로 공유해요.
+    ============================================================ */
+    var firebaseConfig = {
+      apiKey:      "AIzaSyAgyiPvE-C_nuW66CU_MEQtEs-qM-F7XS4",
+      authDomain:  "yunha-faily.firebaseapp.com",
+      databaseURL: "https://yunha-faily-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId:   "yunha-faily",
+      appId:       "1:187951303281:web:13fc335c0a9f85f21de9d0"
     };
-    box.appendChild(b);
-  });
-  document.getElementById("pantryHint").textContent =
-    S.edit ? "✕ 를 눌러 저장고에서 빼요" : `눌러서 오늘 쓸 재료를 고르세요 · 선택 ${S.selected.length}개 · 이 폰에 계속 저장돼요`;
-  document.getElementById("editBtn").textContent = S.edit ? "완료" : "편집";
-}
-function toggleEdit(){ S.edit=!S.edit; renderPantry(); }
-function addIng(){
-  const el = document.getElementById("newIng");
-  const items = el.value.split(/[,\n]/).map(s=>s.trim()).filter(Boolean);
-  items.forEach(it=>{
-    if(S.pantry.includes(it)){ if(!S.selected.includes(it)) S.selected.push(it); return; }
-    const sim = similarIngredient(it, S.pantry);
-    if(sim && sim!==it){
-      const keep = confirm(`'${sim}'와(과) 비슷해요. 같은 재료로 볼까요?\n\n확인 = '${sim}' 사용 (중복 안 만듦)\n취소 = '${it}' 따로 추가`);
-      if(keep){ if(!S.selected.includes(sim)) S.selected.push(sim); return; }
+    var FAMILY_CODE = "yunha-family-0630";   // 두 폰에 똑같이 (같은 파일 올리면 자동으로 같음)
+
+    /* ===== 기본(매일) 일정 ===== */
+    var schedule = [
+      { who: 'child', start: '06:00', end: '07:30', title: '기상 · 놀이' },
+      { who: 'child', start: '07:30', end: '08:00', title: '아침 식사' },
+      { who: 'child', start: '08:00', end: '09:30', title: '놀이' },
+      { who: 'child', start: '09:30', end: '10:30', title: '낮잠 1' },
+      { who: 'child', start: '10:30', end: '11:00', title: '놀이' },
+      { who: 'child', start: '11:00', end: '11:30', title: '점심 식사' },
+      { who: 'child', start: '11:30', end: '13:30', title: '놀이' },
+      { who: 'child', start: '13:30', end: '14:00', title: '분유' },
+      { who: 'child', start: '14:00', end: '14:30', title: '놀이' },
+      { who: 'child', start: '14:30', end: '15:30', title: '낮잠 2' },
+      { who: 'child', start: '15:30', end: '17:30', title: '놀이' },
+      { who: 'child', start: '17:30', end: '18:00', title: '저녁 식사' },
+      { who: 'child', start: '18:00', end: '18:30', title: '목욕' },
+      { who: 'child', start: '18:30', end: '19:00', title: '놀이' },
+      { who: 'child', start: '19:00', end: '19:30', title: '분유 · 양치' },
+      { who: 'child', start: '19:30', end: '06:00', title: '취침' },
+      { who: 'dad', start: '05:00', end: '05:30', title: '양치 · 스트레칭' },
+      { who: 'dad', start: '05:30', end: '06:00', title: '아침 준비' },
+      { who: 'dad', start: '06:00', end: '09:30', title: '오전 육아' },
+      { who: 'dad', start: '09:30', end: '10:30', title: '식사 준비' },
+      { who: 'dad', start: '10:30', end: '11:00', title: '육아' },
+      { who: 'dad', start: '11:00', end: '11:30', title: '점심 식사' },
+      { who: 'dad', start: '11:30', end: '12:00', title: '점심 정리' },
+      { who: 'dad', start: '12:00', end: '13:30', title: '개인 정비' },
+      { who: 'dad', start: '13:30', end: '15:30', title: '운동' },
+      { who: 'dad', start: '15:30', end: '16:00', title: '샤워' },
+      { who: 'dad', start: '16:00', end: '17:00', title: '개인 정비' },
+      { who: 'dad', start: '17:00', end: '17:30', title: '저녁 준비' },
+      { who: 'dad', start: '17:30', end: '18:00', title: '저녁 식사' },
+      { who: 'dad', start: '18:00', end: '19:30', title: '저녁 육아' },
+      { who: 'dad', start: '19:30', end: '21:30', title: '개인 정비' },
+      { who: 'dad', start: '21:30', end: '05:00', title: '취침' },
+      { who: 'mom', start: '05:00', end: '05:30', title: '양치 · 스트레칭' },
+      { who: 'mom', start: '05:30', end: '06:30', title: '운동 (러닝·요가·수영)' },
+      { who: 'mom', start: '06:30', end: '07:00', title: '샤워' },
+      { who: 'mom', start: '07:00', end: '07:30', title: '개인 정비' },
+      { who: 'mom', start: '07:30', end: '08:00', title: '아침 식사' },
+      { who: 'mom', start: '08:00', end: '09:30', title: '개인 정비' },
+      { who: 'mom', start: '09:30', end: '10:30', title: '식사 준비' },
+      { who: 'mom', start: '10:30', end: '11:00', title: '육아' },
+      { who: 'mom', start: '11:00', end: '11:30', title: '점심 식사' },
+      { who: 'mom', start: '11:30', end: '12:00', title: '점심 정리' },
+      { who: 'mom', start: '12:00', end: '17:00', title: '오후 육아' },
+      { who: 'mom', start: '17:00', end: '17:30', title: '저녁 준비' },
+      { who: 'mom', start: '17:30', end: '18:00', title: '저녁 식사' },
+      { who: 'mom', start: '18:00', end: '19:30', title: '저녁 육아' },
+      { who: 'mom', start: '19:30', end: '21:30', title: '개인 정비' },
+      { who: 'mom', start: '21:30', end: '05:00', title: '취침' }
+    ];
+    var exceptions = [];   // 날짜별 예외 일정
+    var hides = [];        // (4-2b용) 특정 날 기본 일정 가리기
+    var history = [];      // 최근 수정 내역 (두 폰 공유)
+    var deviceWho = '';    // 이 폰이 누구인지 (아빠/엄마) — 이 폰에만 저장
+    try { deviceWho = localStorage.getItem('family_device_who') || ''; } catch (e) {}
+    function logChange(act, title, whenDesc) {
+      history.unshift({ t: Date.now(), who: deviceWho, act: act, title: title, when: whenDesc || '' });
+      if (history.length > 30) history.length = 30;   // 최근 30건만 보관
     }
-    S.pantry.push(it);
-    if(!S.selected.includes(it)) S.selected.push(it);
-  });
-  el.value="";
-  save("pantry",S.pantry); save("selected",S.selected);
-  renderPantry();
-}
-document.getElementById("newIng").addEventListener("keydown",e=>{ if(e.key==="Enter") addIng(); });
 
-// ── 카테고리 / 단계 / 건강식 ─────────────────────────────────
-function renderCats(){
-  const box = document.getElementById("cats"); box.innerHTML="";
-  Object.keys(CATS).forEach(k=>{
-    const d = document.createElement("button");
-    d.className = "cat" + (S.cat===k ? " on":"");
-    d.innerHTML = `<button class="iinfo" onclick="event.stopPropagation();showInfo('${k}')" aria-label="${k} 설명">ⓘ</button><div class="e">${CATS[k].emoji}</div><div class="l">${k}</div><div class="s">${CATS[k].sub}</div>`;
-    d.onclick = ()=>{ S.cat=k; save("cat",k); renderCats(); };
-    box.appendChild(d);
-  });
-  document.getElementById("stagebox").style.display = S.cat==="유아식" ? "block":"none";
-  document.getElementById("goBtn").textContent = `${CATS[S.cat].emoji} ${S.cat} 추천받기`;
-  renderStages();
-}
-function renderStages(){
-  const box = document.getElementById("stages"); box.innerHTML="";
-  STAGES.forEach(st=>{
-    const b = document.createElement("button");
-    b.className = "stage" + (S.stage===st ? " on":"");
-    b.textContent = st;
-    b.onclick = ()=>{ S.stage=st; save("stage",st); renderStages(); };
-    box.appendChild(b);
-  });
-}
-function toggleHealthy(){
-  S.healthy=!S.healthy; save("healthy",S.healthy);
-  const b = document.getElementById("healthyBtn");
-  b.className = "toggle" + (S.healthy?" on":"");
-  b.innerHTML = (S.healthy?"🥗":"🍽️") + ` <b style="font-family:'Jua'">건강식 우선</b>&nbsp;` + (S.healthy?"켜짐":"꺼짐")
-    + ` <span class="iinfo" role="button" aria-label="설명" onclick="event.stopPropagation();showInfo('healthy')">ⓘ</span>`;
-}
-function setMode(m){ S.mode=m; save("mode",m); renderMode(); }
-function renderMode(){
-  const f=document.getElementById("modeFast"), p=document.getElementById("modePro");
-  if(f) f.className="modebtn"+(S.mode==="fast"?" on":"");
-  if(p) p.className="modebtn"+(S.mode==="pro"?" on":"");
-}
+    var people = {
+      all: { name: '전체', color: '#6B8E5A' }, dad: { name: '아빠', color: '#3B7DBF' },
+      mom: { name: '엄마', color: '#E08A4E' }, child: { name: '딸', color: '#34A79A' }
+    };
 
-// ── Gemini 호출 (검색 grounding) ─────────────────────────────
-function buildPrompt(){
-  const srcObjs = (S.sources[S.cat]||[]);
-  const srcNames = srcObjs.map(s=>s.name).join(" / ") || "신뢰할 수 있는 요리·영양 자료";
-  const srcUrls = srcObjs.map(s=>s.url).filter(u=>/^https?:\/\//.test(u));
-  let base = `당신은 한국 가정식과 이유식에 능숙한 다정한 요리 도우미입니다.\n집에 있는 재료: ${S.selected.join(", ")}.\n(표기가 다른 같은 재료는 하나로 취급해줘 — 예: 낫또=나또=낫토, 계란=달걀, 대파=파.)\n기본 양념(소금·간장·참기름·물·기름)과 주식은 필요하면 더 써도 됩니다.`;
-  if(S.dislikes && S.dislikes.length) base += `\n[제외 재료 — 반드시 지킬 것] 다음 재료는 알레르기·비선호로 절대 사용하지 마: ${S.dislikes.join(", ")}. 필요하면 다른 재료로 대체해.`;
-  const avoidMenus = (S.menus||[]).filter(m=>m.exclude!==false && (m.cat===S.cat)).map(m=>m.name);
-  if(avoidMenus.length) base += `\n[중복 제외] 다음 요리는 이미 내 메뉴에 있으니 추천하지 말고, 매번 새로운 요리를 제안해줘: ${avoidMenus.join(", ")}.`;
-  let inst = P(S.cat).replace(/\{단계\}/g, S.stage);
-  if(S.cat==="유아식") inst += `\n(안전 규칙 — 항상 적용: 12개월 미만 꿀·소금·설탕 금지, 간 최소화, 단계에 맞는 농도·입자 크기 준수)`;
-  let grounding;
-  if(S.mode==="fast"){
-    grounding = `\n\n[빠른 모드 — 인터넷 검색 안 함] 네가 확실히 아는 지식만으로 추천해. 아래 규칙을 엄격히 지켜.
-- 한국에서 널리 알려진 표준 요리만: 레시피 사이트에 흔히 있는 정석 요리. 요리 이름은 일반적으로 통용되는 정확한 이름으로 써(그 이름으로 검색하면 바로 나올 이름).
-- [확신 규칙] 재료·분량·순서를 확실히 아는 요리만 추천해. 조금이라도 애매하면 그 요리 대신 더 흔하고 확실한 요리로 바꿔.
-- 조리 단계는 표준 조리법 그대로, 분량은 1~2인분 기준으로 현실적으로.
-- 인터넷을 안 봤으니: '인기·후기·조회수' 같은 확인 불가 평가 금지, 실존하지 않는 조합 요리 창작 금지, source_url·refs 는 비워둬(URL을 지어내지 마).
-- sourced_from 에는 "표준 조리법 기준" 처럼 근거의 성격만 짧게 적어.
-- 등록된 출처(${srcNames})의 전반적 스타일(간단·건강 등)은 참고하되, 특정 영상·글을 봤다고 말하지 마.`;
-  } else {
-    const readUrls = pickSpecificUrls(srcObjs);
-    grounding = `\n\n[출처 활용 순서 — 매우 중요] 아래 등록된 출처를 이 순서로 활용해줘.\n`;
-    grounding += `등록된 출처: ${srcNames}.`;
-    if(readUrls.length) grounding += `\n다음 개별 글·영상 URL은 내용을 실제로 열어 읽어줘: ${readUrls.join(", ")}.`;
-    grounding += `
-[검색 절약 — 반드시 지킬 것] 검색은 최대 2회만. 아래 두 갈래로 끝내.
-1) "인물/채널명 + 주재료"로 웹 전체를 한 번에 검색해 (예: "강미즈 배추 애호박 레시피"). 그 결과에는 유튜브 영상·블로그·기사 등이 섞여 나오니, 그 인물이 실제로 만든 요리를 거기서 골라줘.
-2) 1)에서 마땅한 게 없을 때만 레시피 사이트(만개의레시피 등)에서 재료 기준으로 한 번 더 검색해 실존 레시피를 골라줘.
-- 요리 3개는 위 검색 결과 안에서 전부 고르고, 요리마다 따로 추가 검색하지 마. 세부(분량·순서)가 부족하면 네 표준 조리 지식으로 채워(추가 검색 대신).
-- [실존 요리만 — 절대 규칙] 검색으로 실제 확인된, 이미 존재하는 요리만 추천해. 여러 레시피의 아이디어를 섞어 새 요리를 창작·조합하는 것은 금지. 요리 이름은 원본 레시피의 요리명을 그대로(또는 거의 그대로) 쓰고, 각 요리는 그 요리를 실제로 다룬 원본 하나에 대응해야 해.
-- 선택한 재료를 전부 쓰는 실존 요리가 없으면, 재료 일부만 쓰는 실존 요리를 추천하고 unused 에 안 쓴 선택 재료를 적어줘. 원본에 없는 재료를 억지로 끼워 넣지 마.
-- source_url 에는 그 요리의 원본 URL을 넣고, sourced_from(참고 흐름)에서 언급한 자료들의 링크를 refs 배열에 {title,url}로 넣어줘.
-- [링크 규칙] URL은 반드시 검색으로 실제 확인한 것만 넣어. 존재를 확신 못 하면 그 링크는 넣지 말고, 추측으로 URL을 지어내지 마.
-- 레시피 문장은 저작권을 위해 네 말로 요약하고 그대로 베끼지 마.`;
-  }
-  const health = S.healthy ? `\n\n`+P("건강식") : "";
-  const naming = `\n\n[요리 이름 규칙 — 매우 중요] name 은 네이버·구글에 그대로 검색하면 결과가 나오는, 한국에서 실제로 통용되는 대중적인 요리명으로만 써.
-- 재료를 나열한 긴 이름 금지 (❌ "낫또 아보카도 두부 오이 덮밥" → ⭕ "낫또덮밥").
-- 그 요리의 대표 명칭 하나만. 필요하면 핵심 재료 1개까지만 앞에 붙여 (⭕ "두부김치", "애호박전", "소고기미역국").
-- 실제 레시피 사이트/블로그에 그 이름의 요리가 존재해야 해. 존재하지 않을 것 같은 창작 이름은 절대 쓰지 마.
-- 부재료는 name 이 아니라 ingredients 에만 넣어.`;
-  const fmt = `\n\n반드시 아래 JSON 배열로만 답하고 다른 말·마크다운·코드펜스는 넣지 마.\n[{"name":"요리 이름","emoji":"🍳","time":"약 15분","difficulty":"쉬움","ingredients":["재료1"],"steps":["1) 짧게"],"tip":"한 줄 팁","health":"건강 포인트 한 줄","source_title":"참고 자료 이름","source_url":"https://...","sourced_from":"어느 채널/글을 어떻게 종합했는지 한 줄","refs":[{"title":"백종원 애호박전 영상","url":"https://..."},{"title":"만개의레시피 애호박전","url":"https://..."}],"unused":["선택했지만 이 요리에 안 쓴 재료"],"scores":{"use":88,"health":90,"ease":75}}]\n- 정확히 3개. steps는 3~5단계, 각 단계 한 문장.\n- scores는 0~100 정수로 정직하게 채점: use=선택한 재료를 얼마나 많이·핵심적으로 활용하는지, health=영양 균형(채소·단백질·나트륨·당 고려), ease=조리 간편함(시간 짧고 단계·설거지 적을수록 높게). 세 점수가 요리마다 차이 나게 현실적으로.`;
-  return base+"\n\n"+inst+grounding+health+naming+fmt;
-}
-async function recommend(){
-  const err = document.getElementById("error");
-  err.innerHTML=""; 
-  if(!S.key){ err.innerHTML = `<div class="err">먼저 ⚙️설정 탭에서 Gemini API 키를 저장해 주세요.</div>`; go("set"); return; }
-  if(!S.selected.length){ err.innerHTML = `<div class="err">재료 저장고에서 오늘 쓸 재료를 골라주세요.</div>`; return; }
-  const btn = document.getElementById("goBtn");
-  btn.disabled = true; btn.innerHTML = `<span class="spin">🍳</span> 출처를 검색하며 요리 고민 중…`;
-  document.getElementById("results").innerHTML=""; document.getElementById("grounded").innerHTML="";
-  try{
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(S.model)}:generateContent?key=${encodeURIComponent(S.key)}`;
-    const proTools = pickSpecificUrls(S.sources[S.cat]||[]).length
-      ? [{google_search:{}},{url_context:{}}]
-      : [{google_search:{}}];
-    const res = await fetchAI(url, {
-      contents:[{parts:[{text: buildPrompt()}]}],
-      ...(S.mode==="pro" ? {tools:proTools} : {}),
-      generationConfig:{temperature:1.0}
-    });
-    const data = await res.json();
-    const parts = (data.candidates?.[0]?.content?.parts)||[];
-    const text = parts.map(p=>p.text||"").join("");
-    S.results = parseDishes(text);
-    S.resultsMode = S.mode;
-    const chunks = (data.candidates?.[0]?.groundingMetadata?.groundingChunks)||[];
-    S.groundedList = chunks.filter(c=>c.web).map(c=>({title:c.web.title||c.web.uri, url:c.web.uri}));
-    // source_url 이 비면 grounding 결과로 보완
-    S.results.forEach((d,i)=>{ if(!d.source_url && S.groundedList[i]) { d.source_url = S.groundedList[i].url; d.source_title = d.source_title || S.groundedList[i].title; } });
-    renderResults();
-  }catch(ex){
-    err.innerHTML = errorBox(ex.message||ex);
-  }finally{
-    btn.disabled=false; btn.textContent = `${CATS[S.cat].emoji} ${S.cat} 추천받기`;
-  }
-}
-function setSort(k){ S.sort=k; save("sort",k); renderResults(); }
-function sc(d,k){ const v = d.scores && Number(d.scores[k]); return Number.isFinite(v) ? Math.max(0,Math.min(100,v)) : null; }
-function searchLinks(name){
-  const q = encodeURIComponent((name||"")+" 레시피");
-  const q2 = encodeURIComponent(name||"");
-  return `<div class="src" style="margin-top:6px"><b style="font-size:12.5px">🔍 '${name}' 레시피 검색</b>
-    <div class="srcline" style="margin:4px 0"><a href="https://search.naver.com/search.naver?query=${q}" target="_blank" rel="noopener">· 네이버</a></div>
-    <div class="srcline" style="margin:4px 0"><a href="https://www.10000recipe.com/recipe/list.html?q=${q2}" target="_blank" rel="noopener">· 만개의레시피</a></div>
-    <div class="srcline" style="margin:4px 0"><a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">· 유튜브</a></div></div>`;
-}
-function renderRefs(d){
-  // ⚡ 빠른 모드: AI가 링크를 안 만드니 요리명 검색 링크만
-  if(S.resultsMode==="fast"){
-    return searchLinks(d.name) +
-      `<div class="hint" style="margin-top:4px; font-size:11px">⚡ 빠른 모드는 표준 조리법 기준이에요. 실제 후기·영상은 위 검색으로 확인하세요.</div>`;
-  }
-  const grounded = (S.groundedList||[]).filter(r=>r&&/^https?:\/\//.test(r.url));
-  const groundedUrls = new Set(grounded.map(r=>r.url));
-  const host = u=>{ try{ return new URL(u).hostname.replace(/^www\./,""); }catch(_){ return ""; } };
-  const groundedHosts = new Set(grounded.map(r=>host(r.url)).filter(Boolean));
+    /* ===== 날짜 도우미 ===== */
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function ymdOf(y, m, d) { return y + '-' + pad(m + 1) + '-' + pad(d); }   // m: 0=1월
+    function parseYmd(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+    function mondayOf(d) { var x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+    function sundayOf(d) { var m = mondayOf(d); m.setDate(m.getDate() + 6); return m; }
+    function weekDatesOf(d) { var m = mondayOf(d), a = []; for (var i = 0; i < 7; i++) { var t = new Date(m); t.setDate(m.getDate() + i); a.push(ymd(t)); } return a; }
 
-  // AI가 적은 링크들 수집
-  let aiRefs = Array.isArray(d.refs) ? d.refs.filter(r=>r&&/^https?:\/\//.test(r.url)) : [];
-  if(d.source_url && /^https?:\/\//.test(d.source_url) && !aiRefs.some(r=>r.url===d.source_url))
-    aiRefs.unshift({title:d.source_title||"원본", url:d.source_url});
+    var todayStr = ymd(new Date());
+    var weekDates = weekDatesOf(new Date());   // 이번 주 월~일 7개 날짜
 
-  // 검증됨(검색이 실제로 찾은 것) vs 미확인(AI가 적었지만 검색결과에 없음) 분리
-  const verified=[], unverified=[];
-  aiRefs.forEach(r=>{
-    if(groundedUrls.has(r.url) || groundedHosts.has(host(r.url))) verified.push(r);
-    else unverified.push(r);
-  });
-  // 검색이 찾았지만 AI가 안 쓴 링크도 검증된 쪽에 보태기
-  grounded.forEach(g=>{ if(!verified.some(r=>r.url===g.url) && !aiRefs.some(r=>r.url===g.url)) verified.push(g); });
-
-  const items = [...verified.slice(0,3), ...unverified.slice(0,2)];
-  const line = r=>{
-    const unsure = unverified.includes(r);
-    return `<div class="srcline" style="margin:4px 0"><a href="${r.url}" target="_blank" rel="noopener">· ${r.title||r.url}${unsure?' <span style="color:#B7492F">(확인 필요)</span>':''}</a></div>`;
-  };
-  const found = items.length ? `<div class="src" style="margin-top:6px"><b style="font-size:12.5px">🔗 참고 링크</b>`+
-    items.map(line).join("")+
-    `<div class="hint" style="margin-top:4px; font-size:11px">‘확인 필요’ 표시는 검색으로 확인되지 않은 링크예요. 삭제·비공개면 아래 검색을 써보세요.</div></div>` : "";
-  // 정밀 모드에도 요리명 검색 링크를 함께 제공(링크가 죽었을 때 대비)
-  return found + searchLinks(d.name);
-}
-function renderResults(){
-  const bar = document.getElementById("sortbar");
-  const box = document.getElementById("results"); box.innerHTML="";
-  if(!S.results.length){ bar.style.display="none"; return; }
-  // 정렬 바
-  bar.style.display="flex";
-  bar.innerHTML = `<span class="sortlbl">정렬</span>` +
-    Object.keys(SORTS).map(k=>`<button class="stage ${S.sort===k?"on":""}" onclick="setSort('${k}')">${SORTS[k]}</button>`).join("") +
-    `<button class="iinfo" onclick="showInfo('scores')" aria-label="점수 설명">ⓘ</button>`;
-  // 선택한 기준으로 정렬 (점수 없으면 원래 순서 유지)
-  const order = S.results.map((d,i)=>({d,i}))
-    .sort((a,b)=>{
-      const av=sc(a.d,S.sort), bv=sc(b.d,S.sort);
-      if(av===null&&bv===null) return a.i-b.i;
-      if(av===null) return 1; if(bv===null) return -1;
-      return bv-av || a.i-b.i;
-    });
-  const medals=["🥇","🥈","🥉"];
-  order.forEach(({d,i:origIdx},rank)=>{
-    const saved = S.menus.some(m=>m.name===d.name);
-    const el = document.createElement("div");
-    el.className = "card dish in"; el.id = "dishCard"+origIdx; el.style.animationDelay = (rank*0.08)+"s";
-    const steps = (d.steps||[]).map((s,k)=>`<li><span class="n">${k+1}</span><span>${String(s).replace(/^\d+\)\s*/,"")}</span></li>`).join("");
-    const badges = Object.keys(SORTS).map(k=>{
-      const v=sc(d,k); if(v===null) return "";
-      return `<span class="score ${S.sort===k?"hot":""}">${SORTS[k].split(" ")[0]} ${v}점</span>`;
-    }).join("");
-    el.innerHTML = `
-      <h3><span class="medal">${medals[rank]||""}</span>${d.emoji||"🍽️"} ${d.name||"요리"}</h3>
-      <div class="meta">${[d.time,d.difficulty].filter(Boolean).join(" · ")}</div>
-      ${badges?`<div class="scores">${badges}</div>`:""}
-      ${d.health?`<div class="health">🥗 ${d.health}</div>`:""}
-      ${(d.ingredients&&d.ingredients.length)?`<div class="ings">${d.ingredients.map(i=>`<span class="ing">${i}</span>`).join("")}</div>`:""}
-      ${(Array.isArray(d.unused)&&d.unused.length)?`<div style="font-size:12px; color:var(--soft); margin-bottom:6px">🧺 이 요리엔 안 쓰여요: ${d.unused.join(", ")}</div>`:""}
-      <ol class="steps">${steps}</ol>
-      ${d.tip?`<div class="tip">💡 ${d.tip}</div>`:""}
-      ${d.sourced_from?`<div class="src" style="color:var(--soft); font-size:12px">🧩 참고 흐름: ${d.sourced_from}</div>`:""}
-      ${renderRefs(d)}
-      <div class="actions noshot"><button class="btn ghost" onclick="saveDish(${origIdx})">${saved?"★ 저장됨":"☆ 내 메뉴에 저장"}</button><button class="btn ghost" onclick="saveImage('dishCard${origIdx}','${(d.name||"추천요리").replace(/'/g,"")}')">🖼 이미지</button></div>`;
-    box.appendChild(el);
-  });
-  if(S.groundedList.length){
-    document.getElementById("grounded").innerHTML =
-      `<div class="card"><div class="stitle">🔗 이번 추천이 참고한 검색 출처</div>` +
-      S.groundedList.map(g=>`<div class="srcline"><a href="${g.url}" target="_blank" rel="noopener">· ${g.title}</a></div>`).join("") +
-      `<div class="hint" style="margin-top:6px">참고용 정보예요. 아이 건강은 소아과 상담을 우선하세요.</div></div>`;
-  }
-}
-function saveDish(idx){
-  const d = S.results[idx];
-  if(!S.menus.some(m=>m.name===d.name)){
-    S.menus.push({name:d.name, cat:S.cat, emoji:d.emoji||"🍽️", source_url:d.source_url||""});
-    save("menus",S.menus);
-  }
-  renderResults(); renderMenus();
-}
-
-// ── 주간 식단표 ──────────────────────────────────────────────
-function togglePlanBaby(){ S.planBaby=!S.planBaby; save("planBaby",S.planBaby); syncPlanToggles(); }
-function togglePlanPantry(){ S.planPantry=!S.planPantry; save("planPantry",S.planPantry); syncPlanToggles(); }
-function togglePlanAvoid(){ S.planAvoid=!S.planAvoid; save("planAvoid",S.planAvoid); syncPlanToggles(); }
-function syncPlanToggles(){
-  const b1=document.getElementById("planBabyBtn");
-  b1.className="toggle"+(S.planBaby?" on":"");
-  b1.innerHTML=`👶 <b style="font-family:'Jua'">유아식 포함</b>&nbsp;`+(S.planBaby?"켜짐":"꺼짐");
-  const b2=document.getElementById("planPantryBtn");
-  b2.className="toggle"+(S.planPantry?" on":"");
-  b2.innerHTML=`🧲 <b style="font-family:'Jua'">저장고 재료 우선</b>&nbsp;`+(S.planPantry?"켜짐":"꺼짐");
-  const b3=document.getElementById("planAvoidBtn");
-  if(b3){ b3.className="toggle"+(S.planAvoid?" on":"");
-    b3.innerHTML=`📒 <b style="font-family:'Jua'">내 메뉴와 안 겹치게</b>&nbsp;`+(S.planAvoid?"켜짐":"꺼짐"); }
-}
-function buildWeekPrompt(){
-  let p = `당신은 한국 가정식과 이유식에 능숙한 영양 균형 전문 식단 코치입니다.\n월요일부터 일요일까지, 매일 아침·점심·저녁이 있는 7일치 가족 식단표를 짜주세요.\n`;
-  p += S.planBaby
-    ? `구성: 매일 유아식("${S.stage}" 단계, 12개월 미만이면 꿀·소금·설탕 금지, 간 최소화)의 아침·점심·저녁 + 어른식의 아침·점심·저녁 + 간식 1가지.\n어른식 아침은 간단하게(든든하지만 손 덜 가게).\n`
-    : `구성: 매일 어른식의 아침·점심·저녁 + 간식 1가지. 아침은 간단하게.\n`;
-  if(S.dislikes && S.dislikes.length) p += `[제외 재료 — 반드시 지킬 것] 다음 재료는 알레르기·비선호로 절대 사용하지 마: ${S.dislikes.join(", ")}. 장보기 리스트에도 절대 넣지 마.\n`;
-  if(S.planAvoid){
-    const avoid=(S.menus||[]).filter(m=>m.exclude!==false).map(m=>m.name);
-    if(avoid.length) p += `[중복 제외] 다음 요리는 이미 내 메뉴에 있으니 식단표에 넣지 말고 새로운 요리로 채워: ${avoid.join(", ")}.\n`;
-  }
-  if(S.planPantry && S.selected.length) p += `집에 있는 재료(${S.selected.join(", ")})를 최대한 활용하되, 없는 재료를 써도 됩니다.\n`;
-  else if(S.planPantry && S.pantry.length) p += `집에 있는 재료(${S.pantry.join(", ")})를 최대한 활용하되, 없는 재료를 써도 됩니다.\n`;
-
-  // 출처 라이브러리 참고 (추천 탭과 동일하게)
-  const collectSrc = (cats)=>{ const seen=new Set(), names=[], urls=[];
-    cats.forEach(c=>(S.sources[c]||[]).forEach(s=>{ if(seen.has(s.name))return; seen.add(s.name);
-      names.push(s.name); if(/^https?:\/\//.test(s.url)) urls.push(s.url); })); return {names,urls}; };
-  const useCats = S.planBaby ? ["어른식","유아식","간식"] : ["어른식","간식"];
-  const src = collectSrc(useCats);
-  if(src.names.length){
-    p += `\n[출처 — 참고할 것] 아래 등록된 출처(채널·책·기관)를 우선 참고해서 그 스타일·레시피로 메뉴를 골라줘: ${src.names.join(" / ")}.`;
-    if(src.urls.length) p += ` 필요하면 이 URL들의 내용을 실제로 열어 읽어줘: ${src.urls.join(", ")}.`;
-    p += ` [검색 절약] 검색은 최대 2회 — ① "인물/채널명 + 주요 재료"로 웹 전체를 한 번에 검색해 그 인물의 요리들을 고르고, ② 부족할 때만 레시피 사이트에서 한 번 더 검색해. 그 결과 안에서 일주일 메뉴를 다 고르고, 세부 조리법은 네 표준 지식으로 채워. 실존하는 요리명만 쓰고, 여러 레시피를 섞은 새 조합 요리를 창작하지 마.\n`;
-  }
-  p += `\n`+P("식단표")+`\n`;
-  if(S.healthy) p += P("건강식")+`\n`;
-  p += `[근거] 하루 단위로 탄수화물:단백질:지방 대략 비율(%)과, 그날 식단을 그렇게 짠 영양학적 이유를 한 문장으로 제시할 것. 비율은 대략적 추정임을 전제로 현실적으로.\n`;
-  const mealObj = `{"아침":"메뉴","점심":"메뉴","저녁":"메뉴"}`;
-  p += `\n반드시 아래 JSON으로만 답하고 다른 말·마크다운·코드펜스는 넣지 마.\n`;
-  p += S.planBaby
-    ? `{"days":[{"day":"월","baby":${mealObj},"adult":${mealObj},"snack":"간식","macro":"탄 50 · 단 30 · 지 20","reason":"선정 근거 한 문장"}],"shopping":["집에 없는 필요 재료만"],"balance":"이번 주 영양 밸런스 두세 문장 요약(탄단지 관점 포함)"}\n`
-    : `{"days":[{"day":"월","adult":${mealObj},"snack":"간식","macro":"탄 50 · 단 30 · 지 20","reason":"선정 근거 한 문장"}],"shopping":["집에 없는 필요 재료만"],"balance":"이번 주 영양 밸런스 두세 문장 요약(탄단지 관점 포함)"}\n`;
-  p += `- days는 월~일 정확히 7개. 메뉴 이름은 네이버·구글에 검색하면 나오는 대중적인 요리명으로 짧게(재료 나열형 긴 이름 금지, 예: ❌"낫또 아보카도 덮밥" ⭕"낫또덮밥").`;
-  return p;
-}
-async function recommendWeek(){
-  const err=document.getElementById("planError"); err.innerHTML="";
-  if(!S.key){ err.innerHTML=`<div class="err">먼저 ⚙️설정 탭에서 Gemini API 키를 저장해 주세요.</div>`; go("set"); return; }
-  const btn=document.getElementById("planBtn");
-  btn.disabled=true; btn.innerHTML=`<span class="spin">📅</span> 일주일 밸런스 맞추는 중…`;
-  try{
-    const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(S.model)}:generateContent?key=${encodeURIComponent(S.key)}`;
-    const res=await fetchAI(url, {contents:[{parts:[{text:buildWeekPrompt()}]}],tools:[{google_search:{}}],generationConfig:{temperature:0.9, maxOutputTokens:16384}});
-    const data=await res.json();
-    const finish = data.candidates?.[0]?.finishReason;
-    const text=((data.candidates?.[0]?.content?.parts)||[]).map(p=>p.text||"").join("");
-    S.week = parseWeek(text);
-    if(!S.week || !Array.isArray(S.week.days) || !S.week.days.length)
-      throw new Error("응답 형식 오류 — 다시 시도해 주세요.");
-    S.week.madeAt=new Date().toLocaleDateString("ko-KR");
-    S.week.truncated = (finish && finish!=="STOP") || S.week.days.length<7;
-    save("week",S.week);
-    renderWeek();
-  }catch(ex){
-    err.innerHTML = errorBox(ex.message||ex);
-  }finally{
-    btn.disabled=false; btn.textContent="📅 1주일 식단표 만들기";
-  }
-}
-function parseWeek(text){
-  const s=text.indexOf("{"); if(s<0) return null;
-  let body=text.slice(s);
-  const e=body.lastIndexOf("}");
-  // 1) 정상 파싱 시도
-  if(e>0){ try{ return JSON.parse(body.slice(0,e+1)); }catch(_){} }
-  // 2) 잘린 경우 복구: 완결된 day 객체들만 최대한 살림
-  try{
-    const dm = body.match(/"days"\s*:\s*\[/);
-    if(!dm) return null;
-    const rest = body.slice(dm.index + dm[0].length);
-    const days=[]; let depth=0, cur="";
-    for(const ch of rest){
-      if(ch==="{"){ if(depth===0) cur=""; depth++; cur+=ch; }
-      else if(ch==="}"){ depth--; cur+=ch; if(depth===0){ try{ days.push(JSON.parse(cur)); }catch(_){} } }
-      else if(depth>0){ cur+=ch; }
-      else if(depth===0 && ch==="]"){ break; }
+    /* ===== 예외가 어떤 날에 적용되는지 ===== */
+    function appliesOn(ev, D) {
+      if (ev.excl && ev.excl.indexOf(D) >= 0) return false;   // '이 날짜만' 제외된 날
+      switch (ev.scope) {
+        case 'day':      return ev.date === D;
+        case 'dates':    return ev.dates.indexOf(D) >= 0;
+        case 'month':    return D.slice(0, 7) === ev.ym;
+        case 'year':     return D.slice(0, 4) === String(ev.y);
+        case 'weekFrom': return D >= ev.date && D <= ev.weekEnd;
+        default:         return false;
+      }
     }
-    if(!days.length) return null;
-    let shopping=[], balance="";
-    const sm = body.match(/"shopping"\s*:\s*\[([^\]]*)\]/);
-    if(sm){ try{ shopping=JSON.parse("["+sm[1]+"]"); }catch(_){} }
-    const bm = body.match(/"balance"\s*:\s*"([^"]*)"/);
-    if(bm) balance=bm[1];
-    return {days, shopping, balance};
-  }catch(_){ return null; }
-}
+    function hiddenOn(id, D) { return hides.some(function (h) { return h.baseId === id && (h.scope ? appliesOn(h, D) : h.date === D); }); }
 
-// ── 🚫 제외 재료 ─────────────────────────────────────────────
-function renderDislikes(){
-  const box=document.getElementById("dislikes"); if(!box) return;
-  box.innerHTML="";
-  if(!S.dislikes.length){ box.innerHTML=`<span class="hint" style="margin:0">아직 없어요. 예: 생선을 등록하면 모든 추천·식단·장보기에서 빠져요.</span>`; return; }
-  S.dislikes.forEach((d,i)=>{
-    const b=document.createElement("button");
-    b.className="chip del"; b.textContent="🚫 "+d+" ✕";
-    b.onclick=()=>{ S.dislikes.splice(i,1); save("dislikes",S.dislikes); renderDislikes(); };
-    box.appendChild(b);
-  });
-}
-function addDislike(){
-  const el=document.getElementById("newDis");
-  el.value.split(/[,\n]/).map(s=>s.trim()).filter(Boolean).forEach(it=>{
-    if(!S.dislikes.includes(it)) S.dislikes.push(it);
-  });
-  el.value=""; save("dislikes",S.dislikes); renderDislikes();
-}
-
-function mealLines(m){
-  if(!m) return `<span>-</span>`;
-  if(typeof m==="string") return `<span>${m}</span>`;
-  return ["아침","점심","저녁"].filter(k=>m[k]).map(k=>
-    `<div style="display:flex; gap:8px; margin-bottom:2px">
-       <span style="min-width:32px; font-size:12px; color:var(--soft); padding-top:1px">${k}</span>
-       <span style="flex:1">${m[k]}</span></div>`).join("");
-}
-function renderWeek(){
-  const box=document.getElementById("planResult"); box.innerHTML="";
-  const w=S.week; if(!w||!Array.isArray(w.days)) return;
-  const today="일월화수목금토"[new Date().getDay()];
-  if(w.truncated){
-    box.insertAdjacentHTML("beforeend",
-      `<div class="err" style="background:#FFF4E0;color:#9A6A1B">⚠️ 식단이 길어 일부(${w.days.length}/7일)만 받았어요. '유아식 포함'을 끄거나 다시 눌러 전체를 받아보세요.</div>`);
-  }
-  const dayHead=(d)=>`<div style="font-family:'Jua'; font-size:14.5px; margin-bottom:5px; color:${d.day===today?"var(--accent)":"var(--ink)"}">${d.day}요일${d.day===today?" · 오늘":""}</div>`;
-  let html="";
-
-  // 🍚 유아식 식단표 (아침·점심·저녁)
-  if(w.days.some(d=>d.baby)){
-    html+=`<div class="card in" id="babyPlanCard">
-      <div class="stitle">🍚 유아식 식단표 <span class="hint" style="margin:0">${S.stage} · ${w.madeAt||""}</span></div>`
-      + w.days.map(d=>`<div style="border-bottom:1px dashed var(--line); padding:9px 2px; font-size:13.5px">
-          ${dayHead(d)}${mealLines(d.baby)}</div>`).join("")
-      + `<div class="hint" style="margin-top:8px">12개월 미만 꿀·소금·설탕 금지 · 새 재료는 하나씩</div>
-        <button class="btn green noshot" style="width:100%; margin-top:10px" onclick="saveImage('babyPlanCard','유아식_식단표')">🖼 이미지로 저장</button></div>`;
-  }
-
-  // 🍲 어른식 식단표 (아침·점심·저녁 + 간식 + 탄단지 근거)
-  html+=`<div class="card in" id="adultPlanCard">
-    <div class="stitle">🍲 어른식 식단표 <span class="hint" style="margin:0">${w.madeAt||""}</span></div>`
-    + w.days.map(d=>`<div style="border-bottom:1px dashed var(--line); padding:9px 2px; font-size:13.5px">
-        ${dayHead(d)}${mealLines(d.adult)}
-        ${d.snack?`<div style="display:flex; gap:8px; margin-top:2px"><span style="min-width:32px; font-size:12px; color:var(--soft)">간식</span><span style="flex:1; color:var(--soft)">🍪 ${d.snack}</span></div>`:""}
-        ${(d.macro||d.reason)?`<div style="margin-top:5px; font-size:12px; color:var(--leaf); background:#F0F6F2; border-radius:8px; padding:6px 8px">📊 ${[d.macro,d.reason].filter(Boolean).join(" — ")}</div>`:""}
-      </div>`).join("")
-    + (w.balance?`<div class="health" style="margin-top:10px">🥗 <b>주간 밸런스</b> · ${w.balance}</div>`:"")
-    + `<div class="hint" style="margin-top:6px">탄단지 비율은 AI의 대략적 추정치예요 — 참고용으로 봐주세요.</div>
-      <button class="btn green noshot" style="width:100%; margin-top:10px" onclick="saveImage('adultPlanCard','어른식_식단표')">🖼 이미지로 저장</button></div>`;
-
-  // 🛒 장보기
-  if(Array.isArray(w.shopping)&&w.shopping.length){
-    html+=`<div class="card in" id="shopCard"><div class="stitle">🛒 장보기 리스트</div><div class="chips">`+
-      w.shopping.map(it=>`<span class="chip" style="cursor:default">${it}</span>`).join("")+`</div>
-      <div class="hint" style="margin-top:8px">저장고에 없는 재료 기준이에요. 이미 있는 건 건너뛰세요.</div>
-      <button class="btn green noshot" style="width:100%; margin-top:10px" onclick="saveImage('shopCard','장보기_리스트')">🖼 이미지로 저장</button></div>`;
-  }
-  box.innerHTML=html;
-}
-function saveImage(id, name){
-  const el=document.getElementById(id);
-  if(!el) return;
-  if(typeof html2canvas==="undefined"){
-    alert("이미지 도구를 아직 못 불러왔어요. 인터넷 연결을 확인하고 잠시 후 다시 눌러주세요.");
-    return;
-  }
-  const run=()=>html2canvas(el,{
-    backgroundColor:"#FFFDF6", scale:2, useCORS:true,
-    scrollX:0, scrollY:-window.scrollY,
-    windowWidth:document.documentElement.scrollWidth,
-    ignoreElements:(n)=>n.classList&&n.classList.contains("noshot"),
-    onclone:(doc)=>{
-      // 애니메이션 중간 상태(반투명·이동)로 찍히는 것 방지: 복제본에서 완성 상태로 고정
-      doc.querySelectorAll(".in").forEach(x=>{ x.style.animation="none"; x.style.opacity="1"; x.style.transform="none"; });
-      const t=doc.getElementById(id);
-      if(t){ t.style.animation="none"; t.style.opacity="1"; t.style.transform="none"; }
+    /* ★ 그 날짜의 일정 = 기본(안 가려진 것) + 그 날짜에 맞는 예외 */
+    function itemsForDate(D) {
+      var out = schedule.filter(function (b) { return !hiddenOn(b.id, D); });
+      exceptions.forEach(function (ev) { if (appliesOn(ev, D)) out.push(ev); });
+      return out;
     }
-  }).then(canvas=>{
-    const stamp=(S.week&&S.week.madeAt?S.week.madeAt:"").replace(/[^0-9]/g,"");
-    const a=document.createElement("a");
-    a.href=canvas.toDataURL("image/png");
-    a.download=`${name}${stamp?"_"+stamp:""}.png`;
-    document.body.appendChild(a); a.click(); a.remove();
-  }).catch(()=>alert("이미지 저장에 실패했어요. 다시 시도해 주세요."));
-  // 폰트가 덜 로드되면 글자가 깨질 수 있어 폰트 준비 후 캡처
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(run); } else { run(); }
-}
 
-
-// ── AI 지시문(프롬프트) 커스텀 ─────────────────────────────────
-function renderPromptEditor(){
-  const k = document.getElementById("pSel").value;
-  document.getElementById("pText").value = P(k);
-  const custom = S.prompts && typeof S.prompts[k]==="string" && S.prompts[k].trim();
-  document.getElementById("pStatus").textContent = custom ? "✏️ 수정된 버전을 쓰고 있어요." : "기본값을 쓰고 있어요.";
-}
-function savePrompt(){
-  const k = document.getElementById("pSel").value;
-  const v = document.getElementById("pText").value;
-  S.prompts = S.prompts || {};
-  if(v.trim() === DEFAULT_PROMPTS[k].trim()){ delete S.prompts[k]; }
-  else { S.prompts[k] = v; }
-  save("prompts", S.prompts);
-  document.getElementById("pStatus").textContent = "✅ 저장했어요. 다음 추천부터 적용돼요.";
-}
-function resetPrompt(){
-  const k = document.getElementById("pSel").value;
-  if(S.prompts) delete S.prompts[k];
-  save("prompts", S.prompts||{});
-  renderPromptEditor();
-  document.getElementById("pStatus").textContent = "↩️ 기본값으로 되돌렸어요.";
-}
-function previewPrompt(){
-  const k = document.getElementById("pSel").value;
-  let full, editable;
-  if(k==="식단표"){
-    full = buildWeekPrompt();
-    editable = [P("식단표")];
-    if(S.healthy) editable.push(P("건강식"));
-  } else {
-    const keep = S.cat;
-    if(k!=="건강식") S.cat = k;
-    editable = [P(S.cat).replace(/\{단계\}/g, S.stage)];
-    if(S.healthy) editable.push(P("건강식"));
-    full = buildPrompt();
-    S.cat = keep;
-  }
-  const esc = t => t.replace(/&/g,"&amp;").replace(/</g,"&lt;");
-  const cut = full.indexOf("반드시 아래 JSON");
-  const human = cut>=0 ? full.slice(0,cut).trim() : full;
-  const tech  = cut>=0 ? full.slice(cut).trim() : "";
-  // 사람이 읽는 부분을 이스케이프한 뒤, 편집 가능한 단락만 색으로 감싸기
-  let humanHtml = esc(human);
-  const mark = (isCustom) =>
-    `style="color:#B7492F; background:${isCustom?"#FBE9E4":"#FDF3F0"}; border-left:3px solid #B7492F; display:block; padding:6px 8px; border-radius:6px; margin:4px 0"`;
-  editable.forEach(seg=>{
-    const e = esc(seg.trim());
-    if(e && humanHtml.includes(e)){
-      const isCustom = !Object.values(DEFAULT_PROMPTS).some(d=>esc(d.trim())===e);
-      humanHtml = humanHtml.replace(e, `<span ${mark(isCustom)}>${e}</span>`);
+    /* ===== 활동 종류 → 색 (직접 추가·삭제·이름변경 가능) =====
+       각 종류엔 안 바뀌는 고유값(key)이 있고, 일정은 이 key를 기억해요.
+       그래서 보이는 이름(name)을 바꿔도 색·연결이 안 깨져요. */
+    var DEFAULT_CATS = [
+      { key: '수면', name: '수면', color: '#B4B2A9' }, { key: '낮잠', name: '낮잠', color: '#AEBEE0' }, { key: '육아', name: '육아', color: '#6FA85C' },
+      { key: '운동', name: '운동', color: '#E0A24E' }, { key: '식사', name: '식사', color: '#E8896B' }, { key: '놀이', name: '놀이', color: '#4FB0A0' },
+      { key: '개인', name: '개인', color: '#B49BD8' }, { key: '준비', name: '준비', color: '#C7C2B6' }, { key: '기타', name: '기타', color: '#D3D1C7' }
+    ];
+    var categories = DEFAULT_CATS.map(function (c) { return { key: c.key, name: c.name, color: c.color }; });
+    var catColorObj = {}, catNameObj = {};
+    function normalizeCats() { categories.forEach(function (c) { if (!c.key) c.key = c.name; }); }   // 옛 데이터(키 없음) 보정
+    function rebuildCatColors() { catColorObj = {}; catNameObj = {}; categories.forEach(function (c) { catColorObj[c.key] = c.color; catNameObj[c.key] = c.name; }); }
+    rebuildCatColors();
+    function colorForCat(key) { return catColorObj[key] || '#D3D1C7'; }   // 지워진 종류는 회색으로
+    function nameForCat(key) { return catNameObj[key] || key; }
+    function categorize(t) {
+      if (t.indexOf('취침') >= 0) return '수면';
+      if (t.indexOf('낮잠') >= 0) return '낮잠';
+      if (t.indexOf('육아') >= 0) return '육아';
+      if (t.indexOf('운동') >= 0) return '운동';
+      if (t.indexOf('준비') >= 0 || t.indexOf('정리') >= 0) return '준비';
+      if (t.indexOf('식사') >= 0 || t.indexOf('분유') >= 0) return '식사';
+      if (t.indexOf('놀이') >= 0) return '놀이';
+      if (t.indexOf('개인') >= 0 || t.indexOf('샤워') >= 0 || t.indexOf('목욕') >= 0 || t.indexOf('양치') >= 0 || t.indexOf('스트레칭') >= 0) return '개인';
+      return '기타';
     }
-  });
-  document.getElementById("mTitle").textContent = "🔎 실제 전송되는 프롬프트";
-  document.getElementById("mBody").innerHTML =
-    `<p style="font-size:12.5px; color:var(--soft); margin-bottom:8px">
-       <span style="color:#B7492F">■ 빨간 부분</span> = '지시문 커스텀'에서 <b>내가 고칠 수 있는 단락</b><br>
-       <span style="color:var(--ink)">■ 검은 부분</span> = 항상 유지되는 뼈대 (역할·재료·출처·안전규칙 — 자동 조립)</p>
-     <pre style="white-space:pre-wrap; font-size:12.5px; line-height:1.65; background:var(--paper); padding:12px; border-radius:10px; font-family:inherit">${humanHtml}</pre>` +
-    (tech ? `<details style="margin-top:10px">
-       <summary style="font-size:13px; color:var(--soft); cursor:pointer">⚙️ 기술 형식 부분 보기 (몰라도 되는 부분)</summary>
-       <p style="font-size:12px; color:var(--soft); margin:8px 0 6px">AI의 답을 앱이 요리 카드로 그릴 수 있게, 정해진 데이터 서식(JSON)과 점수 채점 기준을 지정하는 부분이에요. 앱이 자동으로 붙이므로 수정할 필요 없어요.</p>
-       <pre style="white-space:pre-wrap; font-size:11.5px; line-height:1.6; background:var(--paper); padding:12px; border-radius:10px; font-family:inherit">${esc(tech)}</pre>
-     </details>` : "");
-  document.getElementById("modalBg").classList.add("show");
-}
-
-// ── 내 메뉴 ─────────────────────────────────────────────────
-function renderMenus(){
-  const sel = document.getElementById("menuCat");
-  if(!sel.options.length) Object.keys(CATS).forEach(k=>{ const o=document.createElement("option"); o.value=k; o.textContent=CATS[k].emoji+" "+k; sel.appendChild(o); });
-  const box = document.getElementById("menuList"); box.innerHTML="";
-  if(!S.menus.length){ box.innerHTML = `<div class="hint" style="text-align:center; padding:10px">아직 저장한 메뉴가 없어요.</div>`; return; }
-  S.menus.forEach((m,i)=>{
-    const el = document.createElement("div"); el.className="menuitem";
-    const excl = m.exclude!==false; // 기본: 추천에서 제외
-    el.innerHTML = `<span style="font-size:20px">${m.emoji||"🍽️"}</span>
-      <span class="nm">${m.name}${m.source_url?` · <a href="${m.source_url}" target="_blank" rel="noopener" style="color:var(--leaf); font-size:12px">출처</a>`:""}</span>
-      <button class="exclbtn" title="추천에 나올지 여부" style="border:1px solid ${excl?'var(--accent)':'var(--line)'}; background:${excl?'var(--tint)':'#fff'}; color:${excl?'var(--accent)':'var(--soft)'}; border-radius:8px; padding:4px 8px; font-size:11px; cursor:pointer; white-space:nowrap">${excl?'🚫 추천 제외':'✅ 추천 포함'}</button>
-      <button class="x" aria-label="삭제">✕</button>`;
-    el.querySelector(".exclbtn").onclick = ()=>{ m.exclude = !excl; save("menus",S.menus); renderMenus(); };
-    el.querySelector(".x").onclick = ()=>{ S.menus.splice(i,1); save("menus",S.menus); renderMenus(); };
-    box.appendChild(el);
-  });
-}
-function addMenu(){
-  const nm = document.getElementById("menuName");
-  const name = nm.value.trim(); if(!name) return;
-  const cat = document.getElementById("menuCat").value;
-  if(!S.menus.some(m=>m.name===name)){
-    S.menus.push({name, cat, emoji:CATS[cat].emoji, source_url:""});
-    save("menus",S.menus);
-  }
-  nm.value=""; renderMenus();
-}
-document.getElementById("menuName").addEventListener("keydown",e=>{ if(e.key==="Enter") addMenu(); });
-
-// ── 설정: 키 / 모델 / 출처 라이브러리 ─────────────────────────
-function saveKey(){
-  const v = document.getElementById("apiKey").value.trim();
-  if(!v){ return; }
-  S.key = v; save("key", v);
-  renderKeyStatus();
-}
-function renderKeyStatus(){
-  document.getElementById("keyStatus").innerHTML = S.key
-    ? `✅ 키가 이 폰에 저장돼 있어요 (끝 4자리: …${S.key.slice(-4)}). 다시 등록할 필요 없어요.`
-    : `아직 키가 없어요. 위에 붙여넣고 저장을 눌러주세요.`;
-}
-document.getElementById("modelSel").addEventListener("change",e=>{ S.model=e.target.value; save("model",S.model); });
-
-function renderSrcTabs(){
-  const box = document.getElementById("srcTabs"); box.innerHTML="";
-  Object.keys(CATS).forEach(k=>{
-    const b=document.createElement("button");
-    b.className = "stage" + (S.srcTab===k?" on":"");
-    b.textContent = CATS[k].emoji+" "+k;
-    b.onclick=()=>{ S.srcTab=k; renderSrcTabs(); renderSrcList(); };
-    box.appendChild(b);
-  });
-}
-function renderSrcList(){
-  const box = document.getElementById("srcList"); box.innerHTML="";
-  const arr = S.sources[S.srcTab]||[];
-  if(!arr.length) box.innerHTML = `<div class="hint">아직 출처가 없어요. 아래에서 추가해 주세요.</div>`;
-  arr.forEach((s,i)=>{
-    const el=document.createElement("div"); el.className="srcline";
-    el.innerHTML = (s.url?`<a href="${s.url}" target="_blank" rel="noopener">· ${s.name}</a>`:`<span class="plain">· ${s.name}</span>`) + `<button class="x">✕</button>`;
-    el.querySelector(".x").onclick=()=>{ arr.splice(i,1); save("sources",S.sources); renderSrcList(); };
-    box.appendChild(el);
-  });
-}
-function addSrc(){
-  const nm=document.getElementById("srcName"), ur=document.getElementById("srcUrl");
-  if(!nm.value.trim()) return;
-  (S.sources[S.srcTab]=S.sources[S.srcTab]||[]).push({name:nm.value.trim(), url:ur.value.trim()});
-  save("sources",S.sources);
-  nm.value=""; ur.value=""; renderSrcList();
-}
-function exportData(){
-  const dump={};
-  Object.keys(localStorage).filter(k=>k.startsWith("mp_")).forEach(k=>{ dump[k]=localStorage.getItem(k); });
-  const blob=new Blob([JSON.stringify({app:"meal-helper", exportedAt:new Date().toISOString(), data:dump}, null, 2)],{type:"application/json"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download=`식단도우미_백업_${new Date().toISOString().slice(0,10).replace(/-/g,"")}.json`;
-  document.body.appendChild(a); a.click(); a.remove();
-  document.getElementById("ioStatus").textContent="⬇️ 백업 파일을 저장했어요. (키 포함 — 안전하게 보관하세요)";
-}
-function importData(ev){
-  const f=ev.target.files&&ev.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=()=>{
-    try{
-      const parsed=JSON.parse(r.result);
-      const data=parsed.data||parsed;
-      const keys=Object.keys(data).filter(k=>k.startsWith("mp_"));
-      if(!keys.length) throw new Error("이 앱 백업 파일이 아니에요.");
-      if(!confirm("현재 데이터를 이 백업으로 덮어쓸까요?")) return;
-      keys.forEach(k=>localStorage.setItem(k, data[k]));
-      document.getElementById("ioStatus").textContent="⬆️ 불러왔어요. 새로고침합니다…";
-      setTimeout(()=>location.reload(), 600);
-    }catch(e){
-      document.getElementById("ioStatus").innerHTML=`<span style="color:#B7492F">불러오기 실패: ${String(e.message||e).replace(/</g,"&lt;")}</span>`;
+    function toMin(h) { var p = h.split(':'); return Number(p[0]) * 60 + Number(p[1]); }
+    function nowMinutes() { var d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+    function withinNow(row) { var s = toMin(row.start), e = toMin(row.end), m = nowMinutes(); return e <= s ? (m >= s || m < e) : (m >= s && m < e); }
+    // 시간대가 겹치는지 (자정 넘김도 처리) — 맞닿은 건(끝=다음 시작) 겹침 아님
+    function toParts(s, e) { return e <= s ? [[s, 1440], [0, e]] : [[s, e]]; }
+    function rangesOverlap(s1, e1, s2, e2) {
+      var A = toParts(s1, e1), B = toParts(s2, e2);
+      for (var i = 0; i < A.length; i++) for (var j = 0; j < B.length; j++) {
+        if (A[i][0] < B[j][1] && B[j][0] < A[i][1]) return true;
+      }
+      return false;
     }
-  };
-  r.readAsText(f);
-  ev.target.value="";
-}
-function resetAll(){
-  if(!confirm("모든 데이터(키·재료·메뉴·출처)를 지울까요?")) return;
-  Object.keys(localStorage).filter(k=>k.startsWith("mp_")).forEach(k=>localStorage.removeItem(k));
-  location.reload();
-}
 
-// ── 초기화 ──────────────────────────────────────────────────
-document.getElementById("apiKey").value = S.key;
-document.getElementById("modelSel").value = S.model;
-toggleHealthy(); toggleHealthy(); // 저장된 값 기준으로 표시 동기화
-renderPantry(); renderCats(); renderMenus(); renderSrcTabs(); renderSrcList(); renderKeyStatus();
-syncPlanToggles(); renderWeek(); renderPromptEditor(); renderDislikes(); renderMode();
-const disEl=document.getElementById("newDis");
-if(disEl) disEl.addEventListener("keydown",e=>{ if(e.key==="Enter") addDislike(); });
-</script>
+    /* ===== 색 조각 만들기 (그 날짜 일정 목록 items 를 받아서) ===== */
+    function catOf(row) { return row.cat ? row.cat : categorize(row.title); }   // 직접 고른 종류 우선, 없으면 자동
+    function personSegments(items, who) {
+      return items.filter(function (r) { return r.who === who; }).map(function (r) {
+        var c = catOf(r); return { s: toMin(r.start), e: toMin(r.end), color: colorForCat(c), cat: c };
+      });
+    }
+    var leadColors = { dad: '#3B7DBF', mom: '#E08A4E', both: '#6B8E5A', free: '#DAD8CF' };
+    function careAt(items, who, m) {
+      return items.some(function (r) { return r.who === who && catOf(r) === '육아' && toMin(r.start) <= m && m < toMin(r.end); });
+    }
+    function allTimeline(items) {
+      var segs = [], prev = null;
+      for (var m = 0; m < 1440; m += 30) {
+        var d = careAt(items, 'dad', m), mo = careAt(items, 'mom', m);
+        var color = d && mo ? leadColors.both : d ? leadColors.dad : mo ? leadColors.mom : leadColors.free;
+        if (prev && prev.color === color) prev.e = m + 30; else { prev = { s: m, e: m + 30, color: color }; segs.push(prev); }
+      }
+      return segs;
+    }
+    function segmentsFor(items, who) { return who === 'all' ? allTimeline(items) : personSegments(items, who); }
+
+    function legendEntries(who, segs) {
+      if (who === 'all') return [['아빠 육아', leadColors.dad], ['엄마 육아', leadColors.mom], ['함께 육아', leadColors.both], ['자유·개인', leadColors.free]];
+      var seen = {}; segs.forEach(function (s) { seen[s.cat] = colorForCat(s.cat); });
+      return Object.keys(seen).map(function (k) { return [nameForCat(k), seen[k]]; });
+    }
+    function legendHTML(entries) { return entries.map(function (e) { return '<span class="lg"><span class="dot" style="background:' + e[1] + '"></span>' + e[0] + '</span>'; }).join(''); }
+
+    /* ===== 원형 시계 ===== */
+    var CX = 150, CY = 150;
+    function pointOnCircle(r, deg) { var a = deg * Math.PI / 180; return [CX + r * Math.sin(a), CY - r * Math.cos(a)]; }
+    function donutPath(rIn, rOut, s, e) {
+      if (e <= s) e += 1440;
+      var a1 = s / 1440 * 360, a2 = e / 1440 * 360, large = (a2 - a1) > 180 ? 1 : 0;
+      var o1 = pointOnCircle(rOut, a1), o2 = pointOnCircle(rOut, a2), i2 = pointOnCircle(rIn, a2), i1 = pointOnCircle(rIn, a1);
+      return 'M' + o1[0].toFixed(1) + ' ' + o1[1].toFixed(1) + ' A' + rOut + ' ' + rOut + ' 0 ' + large + ' 1 ' + o2[0].toFixed(1) + ' ' + o2[1].toFixed(1) +
+             ' L' + i2[0].toFixed(1) + ' ' + i2[1].toFixed(1) + ' A' + rIn + ' ' + rIn + ' 0 ' + large + ' 0 ' + i1[0].toFixed(1) + ' ' + i1[1].toFixed(1) + ' Z';
+    }
+    function clockLabel(r, deg, text) { var p = pointOnCircle(r, deg); return '<text x="' + p[0].toFixed(1) + '" y="' + (p[1] + 4).toFixed(1) + '" text-anchor="middle" font-size="11" fill="#8C8B82">' + text + '</text>'; }
+    function buildClockSVG(items, who, showNow) {
+      var segs = segmentsFor(items, who);
+      var arcs = segs.map(function (seg) { return '<path d="' + donutPath(78, 122, seg.s, seg.e) + '" fill="' + seg.color + '" stroke="#FFFFFF" stroke-width="1"/>'; }).join('');
+      // 작업 경계선마다 구분선 (각 조각 시작점에 방사형 선)
+      var dividers = segs.map(function (seg) {
+        var deg = (seg.s % 1440) / 1440 * 360, a = pointOnCircle(78, deg), b = pointOnCircle(122, deg);
+        return '<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) + '" stroke="#FFFFFF" stroke-width="1.6"/>';
+      }).join('');
+      var marks = '<circle cx="150" cy="150" r="122" fill="none" stroke="var(--line)" stroke-width="0.5"/><circle cx="150" cy="150" r="78" fill="none" stroke="var(--line)" stroke-width="0.5"/>';
+      for (var hh = 0; hh < 24; hh++) {          // 정각마다 눈금 24개
+        var dg = hh * 15, big = (hh % 6 === 0), pa = pointOnCircle(122, dg), pb = pointOnCircle(big ? 130 : 126, dg);
+        marks += '<line x1="' + pa[0].toFixed(1) + '" y1="' + pa[1].toFixed(1) + '" x2="' + pb[0].toFixed(1) + '" y2="' + pb[1].toFixed(1) + '" stroke="' + (big ? '#B4B2A9' : '#D8D6CD') + '" stroke-width="' + (big ? 1.2 : 0.7) + '"/>';
+      }
+      marks += clockLabel(139, 0, '밤 12') + clockLabel(139, 45, '3') + clockLabel(139, 90, '6') + clockLabel(139, 135, '9') +
+               clockLabel(139, 180, '낮 12') + clockLabel(139, 225, '15') + clockLabel(139, 270, '18') + clockLabel(139, 315, '21');
+      // 지금 시각 바늘 (오늘 화면일 때만)
+      var nowMark = '';
+      if (showNow) {
+        var deg2 = nowMinutes() / 1440 * 360, p1 = pointOnCircle(68, deg2), p2 = pointOnCircle(130, deg2);
+        nowMark = '<line x1="' + p1[0].toFixed(1) + '" y1="' + p1[1].toFixed(1) + '" x2="' + p2[0].toFixed(1) + '" y2="' + p2[1].toFixed(1) + '" stroke="#C0392B" stroke-width="2.5" stroke-linecap="round"/>' +
+                  '<circle cx="' + p2[0].toFixed(1) + '" cy="' + p2[1].toFixed(1) + '" r="3.5" fill="#C0392B"/>';
+      }
+      var center = '<text x="150" y="146" text-anchor="middle" font-size="15" font-weight="600" fill="#2C2C2A">' + people[who].name + '</text>' +
+                   '<text x="150" y="164" text-anchor="middle" font-size="11" fill="#8C8B82">' + (who === 'all' ? '육아 당번' : '하루') + '</text>';
+      return '<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">' + arcs + dividers + marks + nowMark + center + '</svg>';
+    }
+
+    /* ===== 목록 한 줄 (누르면 수정창) — 예외면 배지 표시 ===== */
+    function itemHTML(row, showWho, dateStr) {
+      var color = people[row.who].color;
+      var isNow = (dateStr === todayStr) && withinNow(row);
+      var badge = '';
+      if (row.scope) {
+        var edName = row.editor ? people[row.editor].name : '미지정';
+        var mine = row.editor && row.editor === deviceWho;
+        badge = '<span class="badge">수정</span><span class="edby' + (mine ? ' mine' : '') + '">' + (mine ? '✓ ' : '') + edName + '</span>';
+      }
+      var nowBadge = isNow ? '<span class="nowbadge">지금</span>' : '';
+      var whoTag = showWho ? '<span class="who" style="color:' + color + '">' + people[row.who].name + '</span>' : '';
+      return '<div class="item' + (isNow ? ' now' : '') + '" style="border-left-color:' + color + '" onclick="openEdit(' + row.id + ',\'' + dateStr + '\')">' +
+               '<span class="time">' + row.start + ' – ' + row.end + '</span>' +
+               '<span class="ititle">' + row.title + ' ' + badge + nowBadge + '</span>' + whoTag + '</div>';
+    }
+    function listHTML(items, who, dateStr) {
+      var rows = items.filter(function (r) { return who === 'all' || r.who === who; })
+                      .sort(function (a, b) { return toMin(a.start) - toMin(b.start); });
+      if (!rows.length) return '<div class="empty">일정이 없어요. + 로 추가해보세요.</div>';
+      return rows.map(function (r) { return itemHTML(r, who === 'all', dateStr); }).join('');
+    }
+
+    /* ===== 데일리 (오늘) ===== */
+    var currentPerson = 'all';
+    function renderDaily() {
+      var items = itemsForDate(todayStr);
+      document.getElementById('daily-clock').innerHTML = buildClockSVG(items, currentPerson, true);
+      document.getElementById('daily-legend').innerHTML = legendHTML(legendEntries(currentPerson, segmentsFor(items, currentPerson)));
+      document.getElementById('daily-list').innerHTML = listHTML(items, currentPerson, todayStr);
+    }
+    function pickPerson(btn) {
+      document.querySelectorAll('#people .person').forEach(function (p) { p.classList.remove('active'); p.style.background = ''; });
+      btn.classList.add('active'); currentPerson = btn.dataset.person; btn.style.background = people[currentPerson].color;
+      renderDaily();
+    }
+
+    /* ===== 주간 (이번 주) ===== */
+    var weekPerson = 'all';
+    function drawWeek() {
+      var who = weekPerson;
+      var top = 24, H = 344, x0 = 32, colW = 304 / 7;
+      function y(m) { return top + m / 1440 * H; }
+      var dows = ['월', '화', '수', '목', '금', '토', '일'];
+      var todayCol = (new Date().getDay() + 6) % 7;
+      var svg = '';
+      [6, 9, 12, 15, 18, 21].forEach(function (h) {
+        var yy = y(h * 60);
+        svg += '<line x1="32" y1="' + yy.toFixed(1) + '" x2="336" y2="' + yy.toFixed(1) + '" stroke="var(--line)" stroke-width="0.5"/>';
+        svg += '<text x="28" y="' + (yy + 3).toFixed(1) + '" text-anchor="end" font-size="9" fill="#8C8B82">' + h + '</text>';
+      });
+      for (var d = 0; d < 7; d++) {
+        var cx = x0 + d * colW;
+        var col = d === 6 ? '#C4553B' : d === 5 ? '#3B6FBF' : '#2C2C2A';
+        svg += '<text x="' + (cx + colW / 2).toFixed(1) + '" y="16" text-anchor="middle" font-size="11" fill="' + col + '">' + dows[d] + '</text>';
+        // 각 요일은 '그 날짜'의 일정으로 그림 (예외 넣으면 그 칸만 달라짐)
+        var items = itemsForDate(weekDates[d]);
+        var segs = segmentsFor(items, who);
+        var parts = [];
+        segs.forEach(function (g) { if (g.e <= g.s) { parts.push({ s: g.s, e: 1440, color: g.color }); parts.push({ s: 0, e: g.e, color: g.color }); } else parts.push({ s: g.s, e: g.e, color: g.color }); });
+        parts.forEach(function (p) {
+          svg += '<rect x="' + (cx + 1).toFixed(1) + '" y="' + y(p.s).toFixed(1) + '" width="' + (colW - 2).toFixed(1) + '" height="' + (y(p.e) - y(p.s)).toFixed(1) + '" fill="' + p.color + '"/>';
+        });
+      }
+      svg += '<rect x="' + (x0 + todayCol * colW).toFixed(1) + '" y="' + top + '" width="' + colW.toFixed(1) + '" height="' + H + '" fill="none" stroke="var(--accent)" stroke-width="1.6" rx="4"/>';
+      // 현재 시간 가로선 (오늘 칸 진하게)
+      var nowY = y(nowMinutes()), tcx = x0 + todayCol * colW;
+      svg += '<line x1="32" y1="' + nowY.toFixed(1) + '" x2="336" y2="' + nowY.toFixed(1) + '" stroke="#C0392B" stroke-width="1" opacity="0.5"/>';
+      svg += '<line x1="' + tcx.toFixed(1) + '" y1="' + nowY.toFixed(1) + '" x2="' + (tcx + colW).toFixed(1) + '" y2="' + nowY.toFixed(1) + '" stroke="#C0392B" stroke-width="2.5"/>';
+      svg += '<circle cx="' + tcx.toFixed(1) + '" cy="' + nowY.toFixed(1) + '" r="3.5" fill="#C0392B"/>';
+      document.getElementById('week-chart').innerHTML = '<svg viewBox="0 0 340 380" xmlns="http://www.w3.org/2000/svg">' + svg + '</svg>';
+      var repItems = itemsForDate(weekDates[0]);
+      document.getElementById('week-legend').innerHTML = legendHTML(legendEntries(who, segmentsFor(repItems, who)));
+
+      // 요일별 중요 일정(체크한 것) + 수정 있는 날 점 표시
+      var dows2 = ['월', '화', '수', '목', '금', '토', '일'];
+      var strip = '';
+      for (var wd = 0; wd < 7; wd++) {
+        var full = weekDates[wd], dnum = parseYmd(full).getDate();
+        var pins = calEvents(full);
+        var labels = pins.slice(0, 2).map(function (ev) { return '<span class="cal-ev" style="background:' + people[ev.who].color + '">' + escapeHtml(ev.title) + '</span>'; }).join('');
+        if (pins.length > 2) labels += '<span class="cal-more">+' + (pins.length - 2) + '</span>';
+        var dot = (pins.length === 0 && hasException(full)) ? '<span class="wedit"></span>' : '';   // 수정만 있고 중요표시 없을 때
+        strip += '<div class="wcol' + (full === todayStr ? ' wtoday' : '') + '"><div class="wcol-day">' + dows2[wd] + '<span class="wnum">' + dnum + dot + '</span></div><div class="wcol-list">' + labels + '</div></div>';
+      }
+      document.getElementById('week-events').innerHTML = strip;
+    }
+    function pickWeekPerson(btn) {
+      document.querySelectorAll('#week-people .person').forEach(function (p) { p.classList.remove('active'); p.style.background = ''; });
+      btn.classList.add('active'); weekPerson = btn.dataset.person; btn.style.background = people[weekPerson].color;
+      drawWeek();
+    }
+
+    /* ===== 월간 (달력) ===== */
+    var monthState = { y: 0, m: 0 };
+    var selectedDate = null;
+    var monthDetailPerson = 'all';
+    function hasException(D) { return exceptions.some(function (ev) { return appliesOn(ev, D); }) || hides.some(function (h) { return h.scope ? appliesOn(h, D) : h.date === D; }); }
+    function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    // 달력에 글자로 보여줄 '특정 날짜' 특별 일정
+    function calEvents(D) {
+      var out = [];
+      schedule.forEach(function (b) { if (b.pin && !hiddenOn(b.id, D)) out.push(b); });
+      exceptions.forEach(function (ev) { if (ev.pin && appliesOn(ev, D)) out.push(ev); });
+      return out.sort(function (a, b) { return toMin(a.start) - toMin(b.start); });
+    }
+    function renderMonth() {
+      var y = monthState.y, m = monthState.m;
+      var first = new Date(y, m, 1).getDay(), dim = new Date(y, m + 1, 0).getDate();
+      var today = new Date(), isThisMonth = (y === today.getFullYear() && m === today.getMonth());
+      document.getElementById('cal-title').textContent = y + '년 ' + (m + 1) + '월';
+      var dows = ['일', '월', '화', '수', '목', '금', '토'];
+      var html = dows.map(function (d, i) { return '<div class="cal-dow' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '') + '">' + d + '</div>'; }).join('');
+      for (var b = 0; b < first; b++) html += '<div class="cal-cell blank"></div>';
+      for (var d = 1; d <= dim; d++) {
+        var full = ymdOf(y, m, d);
+        var cls = 'cal-cell';
+        if (isThisMonth && d === today.getDate()) cls += ' today';
+        if (selectedDate === d) cls += ' selected';
+        var evs = calEvents(full), labels = '';
+        evs.slice(0, 2).forEach(function (ev) {
+          labels += '<span class="cal-ev" style="background:' + people[ev.who].color + '">' + escapeHtml(ev.title) + '</span>';
+        });
+        if (evs.length > 2) labels += '<span class="cal-more">+' + (evs.length - 2) + '</span>';
+        html += '<div class="' + cls + '" onclick="selectDay(' + d + ')"><span class="cal-daynum">' + d + '</span><span class="cal-evs">' + labels + '</span></div>';
+      }
+      document.getElementById('cal-grid').innerHTML = html;
+    }
+    function selectDay(d) { selectedDate = d; renderMonth(); renderDayDetail(d); }
+    function renderDayDetail(d) {
+      var y = monthState.y, m = monthState.m, who = monthDetailPerson;
+      var full = ymdOf(y, m, d);
+      var dow = ['일', '월', '화', '수', '목', '금', '토'][new Date(y, m, d).getDay()];
+      var items = itemsForDate(full);
+      var picker = ['all', 'dad', 'mom', 'child'].map(function (k) {
+        var on = (k === who), style = on ? ' style="background:' + people[k].color + '"' : '';
+        return '<button class="person' + (on ? ' active' : '') + '" data-person="' + k + '" onclick="pickDetailPerson(this)"' + style + '>' + people[k].name + '</button>';
+      }).join('');
+      var clock = '<div class="clock-card"><div>' + buildClockSVG(items, who, full === todayStr) + '</div><div class="legend">' + legendHTML(legendEntries(who, segmentsFor(items, who))) + '</div></div>';
+      document.getElementById('day-detail').innerHTML =
+        '<h3>' + (m + 1) + '월 ' + d + '일 (' + dow + ') 일정</h3>' +
+        '<div class="people" style="margin-top:12px">' + picker + '</div>' + clock +
+        '<div class="list">' + listHTML(items, who, full) + '</div>';
+    }
+    function pickDetailPerson(btn) { monthDetailPerson = btn.dataset.person; renderDayDetail(selectedDate); }
+    function changeMonth(delta) {
+      var d = new Date(monthState.y, monthState.m + delta, 1);
+      monthState = { y: d.getFullYear(), m: d.getMonth() };
+      selectedDate = null; renderMonth(); document.getElementById('day-detail').innerHTML = '';
+    }
+
+    /* ============================================================
+       저장 · 불러오기 · 번호(id)
+    ============================================================ */
+    var STORAGE_KEY = 'family_schedule_v2';
+    var nextId = 1;
+    var dbRef = null, firebaseOn = false, applyingRemote = false;
+
+    // 저장 : 연결돼 있으면 공동 저장소로, 그리고 폰 안에도 백업
+    function saveAll() {
+      var data = { base: schedule, exceptions: exceptions, hides: hides, categories: categories, history: history };
+      if (firebaseOn && dbRef && !applyingRemote) { try { dbRef.set(data); } catch (e) {} }
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+    }
+    // Firebase 실시간 연결 (설정이 채워져 있을 때만)
+    function initFirebase() {
+      try {
+        if (typeof firebase === 'undefined') return;                        // SDK 못 불러옴
+        if (String(firebaseConfig.databaseURL).indexOf('여기에') >= 0) return;   // 아직 설정 안 함
+        firebase.initializeApp(firebaseConfig);
+        dbRef = firebase.database().ref('schedules/' + FAMILY_CODE);
+        firebaseOn = true;
+        // 다른 폰(또는 내)에서 바뀌면 실시간으로 받아 화면 갱신
+        dbRef.on('value', function (snap) {
+          var data = snap.val();
+          if (!data) { saveAll(); return; }        // 저장소가 비었으면 지금 내 데이터로 채움
+          applyingRemote = true;
+          schedule = data.base || [];
+          exceptions = data.exceptions || [];
+          hides = data.hides || [];
+          if (data.categories && data.categories.length) { categories = data.categories; normalizeCats(); rebuildCatColors(); buildCatButtons(); }
+          history = data.history || [];
+          assignIds(); refreshAll();
+          applyingRemote = false;
+        });
+      } catch (e) { firebaseOn = false; }
+    }
+    function loadAll() {
+      try {
+        var s = localStorage.getItem(STORAGE_KEY);
+        if (s) { var o = JSON.parse(s);
+          if (o && o.base) { schedule = o.base; exceptions = o.exceptions || []; hides = o.hides || [];
+            if (o.categories && o.categories.length) { categories = o.categories; normalizeCats(); rebuildCatColors(); }
+            history = o.history || []; } }
+      } catch (e) {}
+    }
+    function assignIds() {
+      schedule.concat(exceptions).forEach(function (r) {
+        if (typeof r.id !== 'number') r.id = nextId++; else if (r.id >= nextId) nextId = r.id + 1;
+      });
+    }
+    function refreshAll() { renderDaily(); drawWeek(); if (selectedDate) renderDayDetail(selectedDate); renderMonth(); }
+
+    /* ============================================================
+       입력창(모달)
+    ============================================================ */
+    var editingItem = null;    // 수정 중인 일정 (새로 추가면 null)
+    var editContextDate = todayStr;   // 지금 보고 있는 날짜
+    var formWho = 'dad';
+    var formCat = '';          // 직접 고른 종류 ('' = 자동)
+    var formScope = 'day';
+    var formAnchor = todayStr; // 범위의 기준 날짜
+    var pickedDates = [];      // '직접 선택'으로 고른 날짜들
+    var miniState = { y: 0, m: 0 };
+
+    function pickFormWho(btn) {
+      document.querySelectorAll('#who-pick .person').forEach(function (p) { p.classList.remove('active'); p.style.background = ''; });
+      btn.classList.add('active'); formWho = btn.dataset.person; btn.style.background = people[formWho].color;
+    }
+    function setFormWho(who) { pickFormWho(document.querySelector('#who-pick .person[data-person="' + who + '"]')); }
+
+    // 종류 버튼 만들기 (자동 + 각 종류 + 삭제(×) + 새 종류)
+    var PALETTE = ['#B4B2A9', '#AEBEE0', '#6FA85C', '#E0A24E', '#E8896B', '#4FB0A0', '#B49BD8', '#C7C2B6', '#3B7DBF', '#D96BA0', '#7BB661', '#66B2C2'];
+    var newCatColor = PALETTE[0];
+    function catAttr(s) { return String(s).replace(/'/g, '').replace(/"/g, ''); }
+    function buildCatButtons() {
+      var prev = formCat;
+      var html = '<button class="cat" data-cat="" data-color="" onclick="pickCat(this)">자동</button>';
+      categories.forEach(function (c) {
+        var k = catAttr(c.key);
+        html += '<button class="cat" data-cat="' + k + '" data-color="' + c.color + '" onclick="pickCat(this)">' +
+                '<span class="swatch" style="background:' + c.color + '"></span>' + escapeHtml(c.name) +
+                '<span class="cat-x" onclick="deleteCat(event,\'' + k + '\')">×</span></button>';
+      });
+      html += '<button class="cat cat-manage" onclick="toggleCatManage()">편집</button>';
+      html += '<button class="cat cat-add" onclick="openCatPanel(\'\')">＋ 새 종류</button>';
+      document.getElementById('cat-pick').innerHTML = html;
+      setCat(prev);
+    }
+    function selectCatButton(el) {
+      document.querySelectorAll('#cat-pick .cat').forEach(function (b) { b.classList.remove('active'); b.style.background = ''; b.style.color = ''; });
+      el.classList.add('active');
+      formCat = el.dataset.cat;
+      var color = el.dataset.color || '#2B7A78';
+      el.style.background = color; el.style.color = '#fff';
+    }
+    function pickCat(el) {
+      if (el.dataset.cat && document.getElementById('cat-pick').classList.contains('managing')) { renameCat(el.dataset.cat); return; }
+      selectCatButton(el);
+    }
+    function setCat(cat) { var sel = document.querySelector('#cat-pick .cat[data-cat="' + (cat || '') + '"]'); if (sel) selectCatButton(sel); else if (cat) setCat(''); }
+
+    function toggleCatManage() {
+      var p = document.getElementById('cat-pick'); p.classList.toggle('managing');
+      document.getElementById('cat-hint').textContent = p.classList.contains('managing') ? '이름을 누르면 변경, ×를 누르면 삭제돼요.' : '';
+    }
+    var editingCatKey = null;   // null=새로 추가, key=그 종류 편집
+    function renameCat(key) { openCatPanel(key); }
+    function openCatPanel(key) {
+      editingCatKey = key || null;
+      var nameEl = document.getElementById('cat-new-name');
+      if (editingCatKey) {
+        var cat = categories.filter(function (c) { return c.key === editingCatKey; })[0];
+        if (!cat) return;
+        nameEl.value = cat.name; newCatColor = cat.color;
+        document.getElementById('cat-panel-title').textContent = '이름·색 바꾸기';
+      } else {
+        nameEl.value = ''; newCatColor = PALETTE[0];
+        document.getElementById('cat-panel-title').textContent = '새 종류 만들기';
+      }
+      buildColorSwatches();
+      document.getElementById('form-msg').textContent = '';
+      document.getElementById('cat-add-panel').style.display = '';
+    }
+    function closeCatPanel() { document.getElementById('cat-add-panel').style.display = 'none'; editingCatKey = null; }
+    function buildColorSwatches() {
+      document.getElementById('cat-colors').innerHTML = PALETTE.map(function (col) {
+        return '<span class="cc' + (col === newCatColor ? ' on' : '') + '" style="background:' + col + '" onclick="pickNewColor(\'' + col + '\')"></span>';
+      }).join('');
+    }
+    function pickNewColor(col) { newCatColor = col; buildColorSwatches(); }
+    function saveCatPanel() {
+      var name = document.getElementById('cat-new-name').value.trim().replace(/['"]/g, '');
+      var msg = document.getElementById('form-msg');
+      if (!name) { msg.textContent = '종류 이름을 적어주세요.'; return; }
+      if (categories.some(function (c) { return c.name === name && c.key !== editingCatKey; })) { msg.textContent = '이미 있는 이름이에요.'; return; }
+      if (editingCatKey) {                       // 이름·색 변경 (key 그대로 → 연결 안 깨짐)
+        var k = editingCatKey, cat = categories.filter(function (c) { return c.key === k; })[0];
+        cat.name = name; cat.color = newCatColor;
+        rebuildCatColors(); saveAll(); buildCatButtons(); refreshAll(); closeCatPanel(); setCat(k);
+      } else {                                    // 새 종류 추가
+        var key = 'c' + Date.now();
+        categories.push({ key: key, name: name, color: newCatColor });
+        rebuildCatColors(); saveAll(); buildCatButtons(); refreshAll(); closeCatPanel(); setCat(key);
+      }
+    }
+    function deleteCat(ev, key) {
+      ev.stopPropagation();
+      if (categories.length <= 1) return;
+      categories = categories.filter(function (c) { return c.key !== key; });
+      if (formCat === key) formCat = '';
+      rebuildCatColors(); saveAll(); buildCatButtons(); refreshAll();
+    }
+
+    function pickScope(btn) {
+      document.querySelectorAll('#scope-pick .scope').forEach(function (p) { p.classList.remove('active'); });
+      btn.classList.add('active'); formScope = btn.dataset.scope;
+      var showCal = (formScope === 'dates');
+      document.getElementById('minical').style.display = showCal ? '' : 'none';
+      if (showCal) { var a = parseYmd(formAnchor); miniState = { y: a.getFullYear(), m: a.getMonth() }; renderMiniCal(); }
+      updateScopeHint();
+    }
+    function updateScopeHint() {
+      var a = parseYmd(formAnchor), mo = a.getMonth() + 1, dy = a.getDate(), yr = a.getFullYear();
+      var sun = sundayOf(a), t;
+      if (formScope === 'day') t = mo + '월 ' + dy + '일 하루만 적용돼요.';
+      else if (formScope === 'weekFrom') t = mo + '월 ' + dy + '일부터 ' + (sun.getMonth() + 1) + '월 ' + sun.getDate() + '일(일요일)까지 적용돼요.';
+      else if (formScope === 'month') t = yr + '년 ' + mo + '월 한 달 전체에 적용돼요.';
+      else if (formScope === 'year') t = yr + '년 한 해 전체에 적용돼요.';
+      else if (formScope === 'dates') t = '달력에서 날짜를 직접 고르세요. (' + pickedDates.length + '일 선택됨)';
+      else t = '매일(기본 일정)에 넣어요.';
+      document.getElementById('scope-hint').textContent = t;
+    }
+    function renderMiniCal() {
+      var y = miniState.y, m = miniState.m;
+      var first = new Date(y, m, 1).getDay(), dim = new Date(y, m + 1, 0).getDate();
+      var dows = ['일', '월', '화', '수', '목', '금', '토'];
+      var full = monthAllDates(y, m).every(function (x) { return pickedDates.indexOf(x) >= 0; });
+      var html = '<div class="mc-head"><button class="mc-nav" onclick="miniMonth(-1)">‹</button>' +
+                 '<div class="mc-title">' + y + '년 ' + (m + 1) + '월</div>' +
+                 '<button class="mc-nav" onclick="miniMonth(1)">›</button></div>' +
+                 '<button class="mc-allbtn" onclick="selectWholeMonth()">' + (full ? '이 달 전체 해제' : '이 달 전체 선택') + '</button>' +
+                 '<div class="mc-grid">';
+      html += dows.map(function (d) { return '<div class="mc-dow">' + d + '</div>'; }).join('');
+      for (var b = 0; b < first; b++) html += '<div class="mc-cell blank"></div>';
+      for (var d = 1; d <= dim; d++) {
+        var full = ymdOf(y, m, d);
+        var sel = pickedDates.indexOf(full) >= 0 ? ' sel' : '';
+        html += '<div class="mc-cell' + sel + '" onclick="toggleDate(\'' + full + '\')">' + d + '</div>';
+      }
+      document.getElementById('minical').innerHTML = html + '</div>';
+    }
+    function miniMonth(delta) { var d = new Date(miniState.y, miniState.m + delta, 1); miniState = { y: d.getFullYear(), m: d.getMonth() }; renderMiniCal(); }
+    function toggleDate(full) {
+      var i = pickedDates.indexOf(full);
+      if (i >= 0) pickedDates.splice(i, 1); else pickedDates.push(full);
+      renderMiniCal(); updateScopeHint();
+    }
+    // 한 달의 모든 날짜 목록
+    function monthAllDates(y, m) { var dim = new Date(y, m + 1, 0).getDate(), a = []; for (var d = 1; d <= dim; d++) a.push(ymdOf(y, m, d)); return a; }
+    // 지금 보는 달을 통째로 선택 / 이미 다 선택돼 있으면 통째로 해제
+    function selectWholeMonth() {
+      var all = monthAllDates(miniState.y, miniState.m);
+      if (all.every(function (x) { return pickedDates.indexOf(x) >= 0; })) {
+        pickedDates = pickedDates.filter(function (x) { return all.indexOf(x) < 0; });
+      } else {
+        all.forEach(function (x) { if (pickedDates.indexOf(x) < 0) pickedDates.push(x); });
+      }
+      renderMiniCal(); updateScopeHint();
+    }
+
+    function openAdd() {
+      editingItem = null;
+      formAnchor = (currentTab === 'month' && selectedDate) ? ymdOf(monthState.y, monthState.m, selectedDate) : todayStr;
+      pickedDates = [];
+      document.getElementById('sheet-title').textContent = '새 일정';
+      document.getElementById('btn-del').style.display = 'none';
+      document.getElementById('edit-note').style.display = 'none';
+      document.getElementById('scope-field').style.display = '';
+      document.getElementById('form-msg').textContent = '';
+      setFormWho('dad');
+      document.getElementById('f-title').value = '';
+      document.getElementById('f-start').value = '09:00';
+      document.getElementById('f-end').value = '10:00';
+      document.getElementById('f-pin').checked = false;
+      setCat('');
+      pickScope(document.querySelector('#scope-pick .scope[data-scope="day"]'));
+      document.getElementById('modal').classList.add('open');
+    }
+    function isBaseItem(row) { return schedule.indexOf(row) >= 0; }
+    function openEdit(id, dateStr) {
+      var row = schedule.concat(exceptions).filter(function (r) { return r.id === id; })[0];
+      if (!row) return;
+      editingItem = row; editContextDate = dateStr; formAnchor = dateStr;
+      pickedDates = [];
+      document.getElementById('sheet-title').textContent = '일정 수정';
+      document.getElementById('btn-del').style.display = '';
+      document.getElementById('form-msg').textContent = '';
+      document.getElementById('edit-note').style.display = 'none';
+      document.getElementById('scope-field').style.display = '';   // 추가와 똑같은 6개 범위
+      setFormWho(row.who);
+      document.getElementById('f-title').value = row.title;
+      document.getElementById('f-start').value = row.start;
+      document.getElementById('f-end').value = row.end;
+      document.getElementById('f-pin').checked = !!row.pin;
+      setCat(row.cat || '');
+      pickScope(document.querySelector('#scope-pick .scope[data-scope="day"]'));  // 기본: 이 날짜만
+      document.getElementById('modal').classList.add('open');
+    }
+    // 예외에서 특정 날짜 D 만 떼어내기
+    function detachDate(ev, D) {
+      if (ev.scope === 'dates') {
+        ev.dates = ev.dates.filter(function (x) { return x !== D; });
+        if (!ev.dates.length) exceptions = exceptions.filter(function (r) { return r.id !== ev.id; });
+      } else { ev.excl = ev.excl || []; if (ev.excl.indexOf(D) < 0) ev.excl.push(D); }
+    }
+    // 선택한 범위(scope) → 날짜 정보 만들기
+    function scopeFields(S, anchor, picked) {
+      var o = { scope: S };
+      if (S === 'day') o.date = anchor;
+      else if (S === 'weekFrom') { o.date = anchor; o.weekEnd = ymd(sundayOf(parseYmd(anchor))); }
+      else if (S === 'month') o.ym = anchor.slice(0, 7);
+      else if (S === 'year') o.y = Number(anchor.slice(0, 4));
+      else if (S === 'dates') o.dates = picked.slice();
+      return o;
+    }
+    function mergeInto(base, extra) { for (var k in extra) base[k] = extra[k]; return base; }
+    function newEx(v, sf) { return mergeInto({ id: nextId++, who: v.who, start: v.start, end: v.end, title: v.title, pin: !!v.pin, cat: v.cat || '', editor: v.editor || '' }, sf); }
+    function assignVals(row, v) { row.who = v.who; row.start = v.start; row.end = v.end; row.title = v.title; row.pin = !!v.pin; row.cat = v.cat || ''; row.editor = v.editor || ''; }
+
+    // 수정 적용 (추가와 똑같은 6개 범위)
+    function applyEditScoped(row, v) {
+      var S = formScope, D = formAnchor;
+      if (S === 'base') {                                  // 매일 전체
+        if (isBaseItem(row)) assignVals(row, v);
+        else { exceptions = exceptions.filter(function (r) { return r.id !== row.id; }); schedule.push({ id: nextId++, who: v.who, start: v.start, end: v.end, title: v.title, pin: !!v.pin, cat: v.cat || '', editor: v.editor || '' }); }
+        return;
+      }
+      var sf = scopeFields(S, D, pickedDates);
+      if (S === 'day') {                                   // 이 날짜만
+        if (isBaseItem(row)) hides.push({ baseId: row.id, scope: 'day', date: D });
+        else if (row.scope === 'day') { assignVals(row, v); return; }
+        else detachDate(row, D);
+        exceptions.push(newEx(v, sf));
+        return;
+      }
+      // 이 주 / 이 달 / 올해 / 직접선택
+      if (isBaseItem(row)) {
+        hides.push(mergeInto({ baseId: row.id }, sf));     // 그 범위 동안 기본 가리기
+        exceptions.push(newEx(v, sf));
+      } else {
+        exceptions = exceptions.filter(function (r) { return r.id !== row.id; });  // 이 예외를 새 범위로 교체
+        exceptions.push(newEx(v, sf));
+      }
+    }
+    function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+    /* ===== 최근 수정 내역 ===== */
+    function fmtHistTime(t) {
+      var d = new Date(t), now = new Date();
+      var hm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+      var dd = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      var t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      var diff = Math.round((t0 - dd) / 86400000);
+      var day = diff === 0 ? '오늘' : diff === 1 ? '어제' : (d.getMonth() + 1) + '/' + d.getDate();
+      return day + ' ' + hm;
+    }
+    function renderHistory() {
+      document.querySelectorAll('#hist-modal .who-b').forEach(function (b) { b.classList.toggle('on', b.dataset.w === deviceWho); });
+      var el = document.getElementById('hist-list');
+      if (!history.length) { el.innerHTML = '<div class="hist-empty">아직 수정 내역이 없어요.</div>'; return; }
+      el.innerHTML = history.map(function (h) {
+        var mine = h.who && h.who === deviceWho;
+        var who = h.who ? people[h.who].name : '미지정';
+        var actCls = h.act === '삭제' ? 'del' : h.act === '추가' ? 'add' : 'edit';
+        return '<div class="hist-item"><div class="hist-top"><span class="hist-who' + (mine ? ' mine' : '') + '">' + (mine ? '✓ ' : '') + who + '</span><span class="hist-time">' + fmtHistTime(h.t) + '</span></div>' +
+               '<div class="hist-body"><span class="hist-act ' + actCls + '">' + h.act + '</span> ' + escapeHtml(h.title) + (h.when ? ' <span class="hist-when">(' + h.when + ')</span>' : '') + '</div></div>';
+      }).join('');
+    }
+    function openHistory() { document.getElementById('hist-modal').classList.add('open'); renderHistory(); }
+    function closeHistory() { document.getElementById('hist-modal').classList.remove('open'); }
+    function setDeviceWho(w) { deviceWho = w; try { localStorage.setItem('family_device_who', w); } catch (e) {} renderHistory(); }
+
+    function saveForm() {
+      var title = document.getElementById('f-title').value.trim();
+      var start = document.getElementById('f-start').value, end = document.getElementById('f-end').value;
+      var msg = document.getElementById('form-msg');
+      if (!title) { msg.textContent = '무엇을 하는지 적어주세요.'; return; }
+      if (!start || !end) { msg.textContent = '시작과 끝 시간을 정해주세요.'; return; }
+      if (start === end) { msg.textContent = '시작과 끝 시간이 같아요.'; return; }
+
+      // 같은 사람이 같은 시간에 겹치지 않도록 확인
+      var checkDate = editingItem ? editContextDate : formAnchor;
+      var selfId = editingItem ? editingItem.id : -1;
+      var compare = itemsForDate(checkDate).slice();
+      if (formScope !== 'day') {   // 매일/이 주/이 달/올해/직접선택 → 평소 루틴(기본 일정)과도 검사
+        schedule.forEach(function (b) { if (!compare.some(function (x) { return x.id === b.id; })) compare.push(b); });
+      }
+      var others = compare.filter(function (r) { return r.who === formWho && r.id !== selfId; });
+      var clash = null;
+      for (var ci = 0; ci < others.length; ci++) {
+        if (rangesOverlap(toMin(start), toMin(end), toMin(others[ci].start), toMin(others[ci].end))) { clash = others[ci]; break; }
+      }
+      if (clash) { msg.textContent = '이 시간엔 이미 「' + clash.title + '」(' + clash.start + '–' + clash.end + ')이(가) 있어요. 겹치지 않게 해주세요.'; return; }
+      if (formScope === 'dates' && !pickedDates.length) { msg.textContent = '적용할 날짜를 하나 이상 고르세요.'; return; }
+
+      var pin = document.getElementById('f-pin').checked;
+      var vals = { who: formWho, start: start, end: end, title: title, pin: pin, cat: formCat, editor: deviceWho };
+      var scopeLabel = { day: '이 날짜만', weekFrom: '이 주', month: '이 달', year: '올해', dates: '직접 선택', base: '매일' }[formScope] || '';
+      if (editingItem) {                        // 수정 (6개 범위)
+        applyEditScoped(editingItem, vals);
+      } else if (formScope === 'base') {        // 매일 → 기본 일정에 추가
+        schedule.push({ id: nextId++, who: formWho, start: start, end: end, title: title, pin: pin, cat: formCat, editor: deviceWho });
+      } else {                                  // 예외로 추가
+        exceptions.push(newEx(vals, scopeFields(formScope, formAnchor, pickedDates)));
+      }
+      logChange(editingItem ? '수정' : '추가', people[formWho].name + ' ' + title, scopeLabel);
+      saveAll(); refreshAll(); closeModal();
+    }
+    function deleteItem() {
+      if (!editingItem) return;
+      var row = editingItem, S = formScope, D = formAnchor;
+      if (S === 'dates' && !pickedDates.length) { document.getElementById('form-msg').textContent = '삭제할 날짜를 고르세요.'; return; }
+      if (S === 'base') {                        // 전체 삭제
+        schedule = schedule.filter(function (r) { return r.id !== row.id; });
+        exceptions = exceptions.filter(function (r) { return r.id !== row.id; });
+      } else if (S === 'day') {                  // 이 날짜만
+        if (isBaseItem(row)) hides.push({ baseId: row.id, scope: 'day', date: D });
+        else if (row.scope === 'day') exceptions = exceptions.filter(function (r) { return r.id !== row.id; });
+        else detachDate(row, D);
+      } else if (S === 'dates') {                // 고른 날짜들만
+        if (isBaseItem(row)) hides.push(mergeInto({ baseId: row.id }, scopeFields('dates', D, pickedDates)));
+        else pickedDates.forEach(function (d) { detachDate(row, d); });
+      } else {                                   // 이 주 / 이 달 / 올해
+        if (isBaseItem(row)) hides.push(mergeInto({ baseId: row.id }, scopeFields(S, D, pickedDates)));
+        else exceptions = exceptions.filter(function (r) { return r.id !== row.id; });
+      }
+      var delLabel = { day: '이 날짜만', weekFrom: '이 주', month: '이 달', year: '올해', dates: '직접 선택', base: '매일' }[S] || '';
+      logChange('삭제', people[row.who].name + ' ' + row.title, delLabel);
+      saveAll(); refreshAll(); closeModal();
+    }
+
+    /* 구글 캘린더에 이 일정을 보내기 (제목·날짜·시간이 채워진 채로 열려요) */
+    function gcalStamp(dateStr, timeStr) { return dateStr.replace(/-/g, '') + 'T' + timeStr.replace(':', '') + '00'; }
+    function addToGoogleCalendar() {
+      var title = document.getElementById('f-title').value.trim();
+      var start = document.getElementById('f-start').value, end = document.getElementById('f-end').value;
+      var msg = document.getElementById('form-msg');
+      if (!title || !start || !end) { msg.textContent = '제목과 시간을 먼저 채워주세요.'; return; }
+      var D = editingItem ? editContextDate : formAnchor;   // 어느 날짜의 일정인지
+      var endDate = D;
+      if (toMin(end) <= toMin(start)) { var d = parseYmd(D); d.setDate(d.getDate() + 1); endDate = ymd(d); }  // 자정 넘김
+      var dates = gcalStamp(D, start) + '/' + gcalStamp(endDate, end);
+      var url = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+                '&text=' + encodeURIComponent(title) + '&dates=' + dates + '&ctz=Asia/Seoul';
+      window.open(url, '_blank');
+    }
+
+    /* ===== 공통 : 탭 / 날짜 ===== */
+    var currentTab = 'daily';
+    function switchTab(name) {
+      currentTab = name;
+      document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
+      document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+      var id = (name === 'daily') ? 'screen-daily' : (name === 'week') ? 'screen-week' : 'screen-month';
+      document.getElementById(id).classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+    }
+    function showToday() {
+      var now = new Date(), days = ['일', '월', '화', '수', '목', '금', '토'];
+      var txt = (now.getMonth() + 1) + '월 ' + now.getDate() + '일 ' + days[now.getDay()] + '요일';
+      document.getElementById('today').textContent = txt;
+      document.getElementById('daily-title').textContent = '데일리 · ' + txt;
+    }
+
+    /* ===== 앱 시작 ===== */
+    loadAll(); assignIds(); showToday();
+    buildCatButtons();
+    pickPerson(document.querySelector('#people .person.active'));
+    pickWeekPerson(document.querySelector('#week-people .person.active'));
+    var t = new Date();
+    monthState = { y: t.getFullYear(), m: t.getMonth() };
+    renderMonth(); selectDay(t.getDate());
+    initFirebase();   // 설정돼 있으면 실시간 공유 시작
+    // 1분마다 '지금' 표시를 갱신 (시계 바늘·목록 강조)
+    setInterval(function () {
+      todayStr = ymd(new Date());
+      renderDaily(); drawWeek();
+      if (selectedDate) renderDayDetail(selectedDate);
+    }, 60000);
+  </script>
 </body>
 </html>
