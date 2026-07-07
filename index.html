@@ -194,6 +194,7 @@
       <div class="stitle">🔑 Gemini API 키</div>
       <div class="hint">한 번 저장하면 이 폰에 계속 저장돼요. 키는 이 기기 밖으로 나가지 않아요(구글 API 호출에만 사용).<br>
         발급: <a href="https://aistudio.google.com" target="_blank" style="color:var(--leaf)">aistudio.google.com</a> → Get API key (무료)<br>
+        <a href="javascript:void(0)" onclick="showInfo('apikey')" style="color:var(--accent)"><b>📱 API 키 발급 방법 (그림으로 보기)</b></a><br>
         <a href="javascript:void(0)" onclick="showInfo('keysec')" style="color:var(--leaf)"><b>🔒 키는 안전한가요? (해킹 걱정 Q&A)</b></a></div>
       <div class="row" style="margin-top:4px">
         <input id="apiKey" type="password" placeholder="AIza... 키 붙여넣기">
@@ -481,6 +482,31 @@ const INFO = {
     <p><b>🍎 아이폰</b> — Safari(또는 그 앱)의 저장 영역에 있어요. 주의: 아이폰은 <b>오래 안 쓴 사이트의 데이터를 약 7일 뒤 자동 삭제</b>할 수 있어요. <b>'홈 화면에 추가'</b>로 아이콘 실행하면 대부분 예외 처리돼 오래 유지돼요.</p>
     <p><b>🗑 사라지는 경우:</b> 브라우저 캐시·사이트 데이터 삭제 / 시크릿 모드 / 다른 브라우저·다른 폰으로 열기 / 전체 초기화.</p>
     <p><b>💾 백업·기기 이동:</b> 자기 폰에만 있어 프라이버시엔 좋지만 자동 백업은 안 돼요. <b>'내보내기'</b>로 백업 파일을 저장해두고, 새 폰·다른 브라우저에서 <b>'불러오기'</b>하면 그대로 복원돼요. (백업 파일에는 API 키도 들어가니 아무 데나 올리지 마세요.)</p>`},
+  apikey: {t:"📱 API 키 발급 방법", b:`
+    <p>휴대폰으로 <b>1~2분이면</b> 무료로 받아요. 카드 등록 필요 없어요.</p>
+    <div style="margin:10px 0">
+      <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:12px">
+        <div style="min-width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; font-family:'Jua'; display:flex; align-items:center; justify-content:center">1</div>
+        <div><b>aistudio.google.com 접속</b><br><span style="font-size:12.5px; color:var(--soft)">구글 계정으로 로그인해요. 왼쪽 위 ☰ 메뉴를 열면 아래에 🔑(열쇠) 아이콘이 있어요 — 그걸 눌러요.</span></div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:12px">
+        <div style="min-width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; font-family:'Jua'; display:flex; align-items:center; justify-content:center">2</div>
+        <div><b>오른쪽 위 'API 키 만들기' 탭</b><br><span style="font-size:12.5px; color:var(--soft)">'API 키' 화면이 열리면 우측 상단의 <b>+ API 키 만들기</b>(Create API key)를 눌러요.</span></div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:12px">
+        <div style="min-width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; font-family:'Jua'; display:flex; align-items:center; justify-content:center">3</div>
+        <div><b>프로젝트 선택 후 '키 만들기'</b><br><span style="font-size:12.5px; color:var(--soft)">'새 키 만들기' 창이 뜨면 이름은 그대로 두고, 프로젝트를 하나 고른 뒤 <b>키 만들기</b>를 눌러요. (처음이면 프로젝트가 자동으로 하나 생겨요.)</span></div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:flex-start; margin-bottom:12px">
+        <div style="min-width:26px; height:26px; border-radius:50%; background:var(--accent); color:#fff; font-family:'Jua'; display:flex; align-items:center; justify-content:center">4</div>
+        <div><b>키 복사</b><br><span style="font-size:12.5px; color:var(--soft)">생성된 키 옆 📋(복사) 아이콘을 눌러 복사해요. <b>AQ.…</b> 또는 <b>AIza…</b> 로 시작하는 긴 문자예요.</span></div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:flex-start">
+        <div style="min-width:26px; height:26px; border-radius:50%; background:var(--leaf); color:#fff; font-family:'Jua'; display:flex; align-items:center; justify-content:center">5</div>
+        <div><b>이 앱 설정에 붙여넣기</b><br><span style="font-size:12.5px; color:var(--soft)">여기 설정 탭의 <b>🔑 Gemini API 키</b> 칸에 붙여넣고 <b>저장</b>을 누르면 끝! 이 폰에 저장돼서 다음부턴 안 넣어도 돼요.</span></div>
+      </div>
+    </div>
+    <p style="font-size:12.5px"><b>💡 참고</b> · '결제 등급'이 <b>무료 등급</b>으로 보이면 정상이에요. 카드 안 넣으면 요금이 절대 안 나가요. 키는 남에게 보여주지 마세요.</p>`},
   keysec: {t:"🔒 API 키, 안전한가요?", b:`
     <p><b>결론: 안심하고 쓰셔도 돼요.</b> 이유는 이래요.</p>
     <p>① 키는 <b>이 폰의 브라우저 안에만</b> 저장돼요. 이 앱은 서버가 없어서, 앱 제작자를 포함해 그 누구에게도 키가 전송되지 않아요.</p>
