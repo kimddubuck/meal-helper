@@ -48,6 +48,9 @@
   .toggle{width:100%; background:#fff; border:2px solid var(--line); border-radius:14px; padding:12px; margin-bottom:12px;
           display:flex; align-items:center; justify-content:center; gap:8px; color:var(--soft); font-size:14px; cursor:pointer}
   .toggle.on{background:#E6F0E9; border-color:var(--leaf); color:var(--leaf)}
+  .modebtn{background:#fff; border:2px solid var(--line); border-radius:14px; padding:10px 4px; text-align:center; cursor:pointer}
+  .modebtn.on{border-color:var(--accent); background:var(--tint)}
+  .modebtn.on .st{color:var(--accent)}
   .cta{width:100%; background:var(--accent); color:#fff; border:none; border-radius:16px; padding:16px;
        font-family:'Jua',sans-serif; font-size:18px; box-shadow:0 4px 0 rgba(0,0,0,.12); cursor:pointer}
   .cta:disabled{background:var(--soft); box-shadow:none}
@@ -128,6 +131,22 @@
       <div class="stages" id="stages"></div>
     </div>
     <button class="toggle on" id="healthyBtn" onclick="toggleHealthy()">🥗 <b style="font-family:'Jua'">건강식 우선</b>&nbsp;켜짐</button>
+
+    <div style="display:flex; gap:8px; margin-bottom:4px; align-items:center">
+      <span class="hint" style="margin:0">추천 방식</span>
+      <button class="iinfo" onclick="showInfo('mode')" aria-label="모드 설명">ⓘ</button>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px">
+      <button class="modebtn" id="modeFast" onclick="setMode('fast')">
+        <div style="font-size:18px">⚡</div><div style="font-family:'Jua'; font-size:14px">빠른 모드</div>
+        <div style="font-size:11px; color:var(--soft)">무료로 넉넉히</div>
+      </button>
+      <button class="modebtn" id="modePro" onclick="setMode('pro')">
+        <div style="font-size:18px">🔎</div><div style="font-family:'Jua'; font-size:14px">정밀 모드</div>
+        <div style="font-size:11px; color:var(--soft)">출처 검색·사용량↑</div>
+      </button>
+    </div>
+    <div class="cta" style="display:none"></div>
     <button class="cta" id="goBtn" onclick="recommend()">🍚 유아식 추천받기</button>
     <div id="error"></div>
     <div id="sortbar" class="sortbar" style="display:none"></div>
@@ -148,6 +167,7 @@
       </div>
       <button class="toggle on" id="planBabyBtn" onclick="togglePlanBaby()">👶 <b style="font-family:'Jua'">유아식 포함</b>&nbsp;켜짐</button>
       <button class="toggle on" id="planPantryBtn" onclick="togglePlanPantry()">🧲 <b style="font-family:'Jua'">저장고 재료 우선</b>&nbsp;켜짐</button>
+      <button class="toggle on" id="planAvoidBtn" onclick="togglePlanAvoid()">📒 <b style="font-family:'Jua'">내 메뉴와 안 겹치게</b>&nbsp;켜짐</button>
       <button class="cta" id="planBtn" onclick="recommendWeek()">📅 1주일 식단표 만들기</button>
       <div id="planError"></div>
     </div>
@@ -392,6 +412,13 @@ const INFO = {
     <p>집에 있는 재료를 한 번 등록해두면 <b>이 폰에 계속 저장</b>돼요. 다음부터는 타이핑 없이 눌러서 선택(✓)만 하면 됩니다.</p>
     <p><b>한글·영어 아무거나 괜찮아요.</b> "계란"도 "egg"도, "그릭요거트" 같은 상품명도 AI가 알아들어요. 쉼표로 여러 개를 한 번에 등록할 수 있어요.</p>
     <p>'편집'을 누르면 ✕로 저장고에서 뺄 수 있어요.</p>`},
+  mode: {t:"⚡🔎 빠른 모드 vs 정밀 모드", b:`
+    <p>추천할 때 <b>AI가 인터넷을 검색하느냐</b>의 차이예요.</p>
+    <p><b>⚡ 빠른 모드 (기본)</b><br>
+    인터넷을 안 보고, AI가 아는 지식으로 <b>검증된 정석 레시피</b>를 빠르게 추천해요. 무료 사용량을 거의 안 써서 <b>하루에 넉넉히</b> 쓸 수 있어요. 출처는 요리명으로 만든 <b>레시피 검색 링크</b>(만개의레시피·구글)로 대신하고, "인기 있다" 같은 확인 못 하는 평가는 하지 않아요. 평소 "이 재료로 뭐 해먹지?"엔 이걸로 충분해요.</p>
+    <p><b>🔎 정밀 모드</b><br>
+    <b>설정 → 📚 출처 라이브러리에 등록해둔 채널·블로그</b>(백종원·강미즈 등)를 <b>실제로 검색</b>해 실존 레시피와 진짜 출처 링크를 가져와요. 검색을 꼭 필요한 만큼만(최대 2회) 쓰도록 최적화해서 예전보다 사용량이 줄었지만, 그래도 빠른 모드보다는 <b>무료 사용량을 더 써요</b>. "이번엔 진짜 그 채널 레시피대로 보고 싶다" 할 때 켜세요. (출처를 안 넣었으면 효과가 약하니, 설정에서 좋아하는 채널·블로그를 먼저 등록해두세요.)</p>
+    <p>💡 평소엔 빠른 모드, 특정 채널 레시피가 필요할 때만 정밀 모드 — 이렇게 쓰면 무료로 오래 써요.</p>`},
   healthy: {t:"🥗 건강식 우선", b:`
     <p>켜면 AI에게 <b>영양 균형을 최우선</b>으로 추천하라고 지시해요 — 신선한 채소·통곡물·양질의 단백질 위주로 구성하고, 튀김·과한 나트륨·설탕은 피하게 돼요. 각 요리에 건강 포인트(🥗) 한 줄도 함께 달아줘요.</p>
     <p>끄면 이 제약이 빠져서 같은 재료라도 좀 더 자유로운 메뉴(전, 튀김 등)가 나올 수 있어요. "오늘은 그냥 맛있는 거!" 싶은 날 꺼보세요.</p>
@@ -416,11 +443,10 @@ const INFO = {
   sources: {t:"📚 출처 라이브러리", b:`
     <p>AI가 <b>먼저 참고할 곳</b>을 등록해두는 곳이에요. 카테고리별로 관리돼요.</p>
     <p><b>URL이면 다 돼요</b> — 유튜브, 블로그, 레시피 사이트, 논문, 기관 자료(식약처 등). AI가 글자를 읽어서 참고하니 <b>글로 잘 정리된 페이지일수록 정확</b>해요.</p>
-    <p><b>추천이 만들어지는 순서</b><br>
-    1️⃣ 등록한 채널·블로그 안에서 먼저 찾기<br>
-    2️⃣ 없으면 그 사람 이름으로 웹 전체 검색<br>
-    3️⃣ 그래도 부족하면 레시피 사이트로 보완<br>
-    4️⃣ <b>실제로 존재하는 요리만</b> 추천 (조합 창작 안 함 · 🧩 참고 흐름·🔗 링크로 근거 표시)</p>
+    <p><b>추천이 만들어지는 순서 (정밀 모드)</b><br>
+    1️⃣ 등록한 인물·채널 이름 + 재료로 <b>웹 전체를 한 번에 검색</b> (영상·블로그 다 걸림)<br>
+    2️⃣ 마땅한 게 없을 때만 레시피 사이트에서 한 번 더<br>
+    3️⃣ <b>실제로 존재하는 요리만</b> 추천 (조합 창작 안 함 · 🧩 참고 흐름·🔗 링크로 근거 표시)</p>
     <p><b>더 정확하게 쓰는 법</b><br>
     · 메인 주소보다 <b>레시피 글·영상 하나의 링크</b>를 넣기<br>
     · 맛·레시피는 좋아하는 채널·블로그, <b>영양·건강 근거는 식약처·질병관리청 같은 기관</b> 링크로</p>`},
@@ -428,13 +454,15 @@ const INFO = {
     <p>우리집 <b>단골 음식 노트</b>예요. 두 가지로 채워져요:</p>
     <p>① 추천 결과에서 <b>☆를 누르면</b> 저장돼요. 출처 링크도 함께 저장돼서 나중에 만드는 법을 다시 열어볼 수 있어요.<br>
     ② AI와 무관하게 <b>자주 해먹는 음식을 직접 추가</b>할 수 있어요 (예: 소고기미역국). 분류를 골라서요.</p>
-    <p>"오늘 뭐 해먹지" 할 때 추천을 돌리지 않고 바로 꺼내 보는 즐겨찾기 용도예요. 폰에 계속 저장돼요.</p>`},
+    <p>"오늘 뭐 해먹지" 할 때 추천을 돌리지 않고 바로 꺼내 보는 즐겨찾기 용도예요. 폰에 계속 저장돼요.</p>
+    <p><b>🚫 추천 제외 / ✅ 추천 포함</b> — 각 메뉴 옆 버튼으로 정해요. <b>기본은 '추천 제외'</b>라, 저장한 요리는 추천에 안 나오고 <b>매번 새로운 요리</b>를 만나게 돼요. 자주 해먹어서 또 나와도 좋은 메뉴는 '✅ 추천 포함'으로 바꾸면 돼요. (같은 카테고리 추천에만 적용돼요.)</p>`},
   plan: {t:"📅 1주일 식단표", b:`
     <p>월~일 7일치, <b>아침·점심·저녁</b>이 있는 급식표 스타일 식단(유아식·어른식·간식)을 한 번에 짜줘요. 두 가지 원칙으로요:</p>
     <p><b>① 질리지 않게</b> — 일주일 안에 같은 요리를 반복하지 않고, 주재료와 조리법(볶음/국/찜/구이…)을 돌려가며 배치해요.<br>
     <b>② 영양 골고루</b> — 단백질원과 채소를 주 단위로 순환시키고, <b>날마다 탄:단:지 비율과 선정 근거(📊)</b>를 함께 보여줘요. 비율은 AI의 대략적 추정이라 참고용이에요.</p>
     <p><b>🚫 빼고 싶은 재료</b>에 생선처럼 싫어하거나 알레르기 있는 재료를 등록하면, 식단표·추천·장보기 리스트 모두에서 빠져요. 폰에 저장돼서 계속 적용돼요.</p>
     <p><b>출처 라이브러리도 반영돼요</b> — 등록한 채널·책·기관을 참고해서 그 스타일로 일주일 메뉴를 골라요(추천 탭과 동일). 정확도 팁도 출처 라이브러리 ⓘ에 있어요.</p>
+    <p><b>📒 내 메뉴와 안 겹치게</b> — 켜면 내 메뉴에 저장한(추천 제외로 둔) 요리는 식단표에도 안 나와서 늘 새로운 일주일이 돼요. 단골 메뉴가 식단에 섞여도 좋으면 끄면 돼요.</p>
     <p><b>👶 유아식 포함</b>을 켜면 추천 탭에서 고른 개월수 단계에 맞는 <b>유아식 식단표</b>가 어른식 표와 별도로 만들어져요.<br>
     <b>🧲 저장고 재료 우선</b>을 켜면 내 재료 저장고의 재료를 최대한 활용하고, 부족한 것만 🛒 장보기 리스트로 뽑아줘요.</p>
     <p>각 표의 <b>🖼 이미지로 저장</b>을 누르면 PNG 그림파일로 저장돼요 — 냉장고에 붙이거나 가족에게 카톡으로 보내기 좋아요.</p>
@@ -480,8 +508,10 @@ let S = {
   cat: load("cat","유아식"), stage: load("stage", STAGES[2]), healthy: load("healthy", true),
   sort: load("sort","use"),
   week: load("week", null), planBaby: load("planBaby", true), planPantry: load("planPantry", true),
+  planAvoid: load("planAvoid", true),
   prompts: load("prompts", {}),
   dislikes: load("dislikes", []),
+  mode: load("mode", "fast"),
   edit:false, srcTab:"유아식", results:[], groundedList:[], loading:false,
 };
 const SORTS = { use:"🥕 재료 활용도순", health:"🥗 건강 점수순", ease:"⚡ 간편함순" };
@@ -496,6 +526,17 @@ const DEFAULT_PROMPTS = {
 [원칙 2 — 영양 골고루] 단백질원(소고기/돼지고기/닭/생선/달걀/두부·콩)을 주 단위로 고르게 배분하고, 매일 채소를 포함하며, 나트륨·당은 낮게. 튀김은 주 1회 이하.`,
 };
 function P(k){ const o = S.prompts && S.prompts[k]; return (typeof o==="string" && o.trim()) ? o : DEFAULT_PROMPTS[k]; }
+// 개별 글·영상 URL(읽을 가치 있음)과 채널 메인(읽어도 소득 적음) 구분
+function pickSpecificUrls(list){
+  return (list||[]).map(s=>s.url).filter(u=>/^https?:\/\//.test(u)).filter(u=>{
+    try{
+      const x=new URL(u), p=x.pathname;
+      if(/watch|shorts|\/recipe\/|\/post|\/entry|\/archives/.test(u)) return true;   // 영상·글 URL
+      if(p.startsWith("/@")||p==="/"||p==="") return false;                            // 채널 메인·루트
+      return p.length>15;                                                              // 긴 경로면 개별 글로 간주
+    }catch(_){ return false; }
+  });
+}
 
 
 // ── 탭 ──────────────────────────────────────────────────────
@@ -584,6 +625,12 @@ function toggleHealthy(){
   b.innerHTML = (S.healthy?"🥗":"🍽️") + ` <b style="font-family:'Jua'">건강식 우선</b>&nbsp;` + (S.healthy?"켜짐":"꺼짐")
     + ` <span class="iinfo" role="button" aria-label="설명" onclick="event.stopPropagation();showInfo('healthy')">ⓘ</span>`;
 }
+function setMode(m){ S.mode=m; save("mode",m); renderMode(); }
+function renderMode(){
+  const f=document.getElementById("modeFast"), p=document.getElementById("modePro");
+  if(f) f.className="modebtn"+(S.mode==="fast"?" on":"");
+  if(p) p.className="modebtn"+(S.mode==="pro"?" on":"");
+}
 
 // ── Gemini 호출 (검색 grounding) ─────────────────────────────
 function buildPrompt(){
@@ -592,22 +639,35 @@ function buildPrompt(){
   const srcUrls = srcObjs.map(s=>s.url).filter(u=>/^https?:\/\//.test(u));
   let base = `당신은 한국 가정식과 이유식에 능숙한 다정한 요리 도우미입니다.\n집에 있는 재료: ${S.selected.join(", ")}.\n(표기가 다른 같은 재료는 하나로 취급해줘 — 예: 낫또=나또=낫토, 계란=달걀, 대파=파.)\n기본 양념(소금·간장·참기름·물·기름)과 주식은 필요하면 더 써도 됩니다.`;
   if(S.dislikes && S.dislikes.length) base += `\n[제외 재료 — 반드시 지킬 것] 다음 재료는 알레르기·비선호로 절대 사용하지 마: ${S.dislikes.join(", ")}. 필요하면 다른 재료로 대체해.`;
+  const avoidMenus = (S.menus||[]).filter(m=>m.exclude!==false && (m.cat===S.cat)).map(m=>m.name);
+  if(avoidMenus.length) base += `\n[중복 제외] 다음 요리는 이미 내 메뉴에 있으니 추천하지 말고, 매번 새로운 요리를 제안해줘: ${avoidMenus.join(", ")}.`;
   let inst = P(S.cat).replace(/\{단계\}/g, S.stage);
   if(S.cat==="유아식") inst += `\n(안전 규칙 — 항상 적용: 12개월 미만 꿀·소금·설탕 금지, 간 최소화, 단계에 맞는 농도·입자 크기 준수)`;
-  let grounding = `\n\n[출처 활용 순서 — 매우 중요] 아래 등록된 출처를 이 순서로 활용해줘.\n`;
-  grounding += `등록된 출처: ${srcNames}.`;
-  if(srcUrls.length) grounding += `\n출처 URL(내용을 실제로 열어 읽을 것): ${srcUrls.join(", ")}.`;
-  grounding += `
-1) 등록된 채널/인물이 위 재료로 만든 요리를 찾아줘. 이때 그 채널의 영상 제목들(대개 제목이 곧 요리명)을 검색해서, 실제로 그 채널에 있는 요리 중에서 골라줘.
-2) 채널에서 못 찾거나 정보가 부족하면, 그 유튜버·인물 이름으로 구글 전체를 검색해줘 (예: "강미즈 애호박죽", "간단한끼 두부요리"). 그 사람이 소개한 요리나 그 사람 이름으로 정리된 블로그·레시피 글을 폭넓게 참고해도 돼.
-3) 그래도 부족하면, "같은 요리"를 다룬 신뢰할 만한 블로그·레시피 사이트(만개의레시피 등)에서 그 요리의 세부(분량·순서)만 보완해줘.
-4) 찾은 실존 레시피를 네 말로 요약해 추천해줘.
+  let grounding;
+  if(S.mode==="fast"){
+    grounding = `\n\n[빠른 모드 — 인터넷 검색 안 함] 네가 확실히 아는 지식만으로 추천해. 아래 규칙을 엄격히 지켜.
+- 한국에서 널리 알려진 표준 요리만: 레시피 사이트에 흔히 있는 정석 요리. 요리 이름은 일반적으로 통용되는 정확한 이름으로 써(그 이름으로 검색하면 바로 나올 이름).
+- [확신 규칙] 재료·분량·순서를 확실히 아는 요리만 추천해. 조금이라도 애매하면 그 요리 대신 더 흔하고 확실한 요리로 바꿔.
+- 조리 단계는 표준 조리법 그대로, 분량은 1~2인분 기준으로 현실적으로.
+- 인터넷을 안 봤으니: '인기·후기·조회수' 같은 확인 불가 평가 금지, 실존하지 않는 조합 요리 창작 금지, source_url·refs 는 비워둬(URL을 지어내지 마).
+- sourced_from 에는 "표준 조리법 기준" 처럼 근거의 성격만 짧게 적어.
+- 등록된 출처(${srcNames})의 전반적 스타일(간단·건강 등)은 참고하되, 특정 영상·글을 봤다고 말하지 마.`;
+  } else {
+    const readUrls = pickSpecificUrls(srcObjs);
+    grounding = `\n\n[출처 활용 순서 — 매우 중요] 아래 등록된 출처를 이 순서로 활용해줘.\n`;
+    grounding += `등록된 출처: ${srcNames}.`;
+    if(readUrls.length) grounding += `\n다음 개별 글·영상 URL은 내용을 실제로 열어 읽어줘: ${readUrls.join(", ")}.`;
+    grounding += `
+[검색 절약 — 반드시 지킬 것] 검색은 최대 2회만. 아래 두 갈래로 끝내.
+1) "인물/채널명 + 주재료"로 웹 전체를 한 번에 검색해 (예: "강미즈 배추 애호박 레시피"). 그 결과에는 유튜브 영상·블로그·기사 등이 섞여 나오니, 그 인물이 실제로 만든 요리를 거기서 골라줘.
+2) 1)에서 마땅한 게 없을 때만 레시피 사이트(만개의레시피 등)에서 재료 기준으로 한 번 더 검색해 실존 레시피를 골라줘.
+- 요리 3개는 위 검색 결과 안에서 전부 고르고, 요리마다 따로 추가 검색하지 마. 세부(분량·순서)가 부족하면 네 표준 조리 지식으로 채워(추가 검색 대신).
 - [실존 요리만 — 절대 규칙] 검색으로 실제 확인된, 이미 존재하는 요리만 추천해. 여러 레시피의 아이디어를 섞어 새 요리를 창작·조합하는 것은 금지. 요리 이름은 원본 레시피의 요리명을 그대로(또는 거의 그대로) 쓰고, 각 요리는 그 요리를 실제로 다룬 원본 하나에 대응해야 해.
 - 선택한 재료를 전부 쓰는 실존 요리가 없으면, 재료 일부만 쓰는 실존 요리를 추천하고 unused 에 안 쓴 선택 재료를 적어줘. 원본에 없는 재료를 억지로 끼워 넣지 마.
 - source_url 에는 그 요리의 원본 URL을 넣고, sourced_from(참고 흐름)에서 언급한 자료들의 링크를 refs 배열에 {title,url}로 넣어줘.
 - [링크 규칙] URL은 반드시 검색으로 실제 확인한 것만 넣어. 존재를 확신 못 하면 그 링크는 넣지 말고, 추측으로 URL을 지어내지 마.
-- 등록된 출처·해당 인물과 전혀 무관하게밖에 못 찾을 때만 일반 자료를 써.
 - 레시피 문장은 저작권을 위해 네 말로 요약하고 그대로 베끼지 마.`;
+  }
   const health = S.healthy ? `\n\n`+P("건강식") : "";
   const fmt = `\n\n반드시 아래 JSON 배열로만 답하고 다른 말·마크다운·코드펜스는 넣지 마.\n[{"name":"요리 이름","emoji":"🍳","time":"약 15분","difficulty":"쉬움","ingredients":["재료1"],"steps":["1) 짧게"],"tip":"한 줄 팁","health":"건강 포인트 한 줄","source_title":"참고 자료 이름","source_url":"https://...","sourced_from":"어느 채널/글을 어떻게 종합했는지 한 줄","refs":[{"title":"백종원 애호박전 영상","url":"https://..."},{"title":"만개의레시피 애호박전","url":"https://..."}],"unused":["선택했지만 이 요리에 안 쓴 재료"],"scores":{"use":88,"health":90,"ease":75}}]\n- 정확히 3개. steps는 3~5단계, 각 단계 한 문장.\n- scores는 0~100 정수로 정직하게 채점: use=선택한 재료를 얼마나 많이·핵심적으로 활용하는지, health=영양 균형(채소·단백질·나트륨·당 고려), ease=조리 간편함(시간 짧고 단계·설거지 적을수록 높게). 세 점수가 요리마다 차이 나게 현실적으로.`;
   return base+"\n\n"+inst+grounding+health+fmt;
@@ -622,15 +682,19 @@ async function recommend(){
   document.getElementById("results").innerHTML=""; document.getElementById("grounded").innerHTML="";
   try{
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(S.model)}:generateContent?key=${encodeURIComponent(S.key)}`;
+    const proTools = pickSpecificUrls(S.sources[S.cat]||[]).length
+      ? [{google_search:{}},{url_context:{}}]
+      : [{google_search:{}}];
     const res = await fetchAI(url, {
       contents:[{parts:[{text: buildPrompt()}]}],
-      tools:[{google_search:{}},{url_context:{}}],
+      ...(S.mode==="pro" ? {tools:proTools} : {}),
       generationConfig:{temperature:1.0}
     });
     const data = await res.json();
     const parts = (data.candidates?.[0]?.content?.parts)||[];
     const text = parts.map(p=>p.text||"").join("");
     S.results = parseDishes(text);
+    S.resultsMode = S.mode;
     const chunks = (data.candidates?.[0]?.groundingMetadata?.groundingChunks)||[];
     S.groundedList = chunks.filter(c=>c.web).map(c=>({title:c.web.title||c.web.uri, url:c.web.uri}));
     // source_url 이 비면 grounding 결과로 보완
@@ -645,6 +709,15 @@ async function recommend(){
 function setSort(k){ S.sort=k; save("sort",k); renderResults(); }
 function sc(d,k){ const v = d.scores && Number(d.scores[k]); return Number.isFinite(v) ? Math.max(0,Math.min(100,v)) : null; }
 function renderRefs(d){
+  // ⚡ 빠른 모드: AI가 링크를 안 만드니, 요리명으로 항상 열리는 '레시피 검색' 링크를 앱이 생성
+  if(S.resultsMode==="fast"){
+    const q = encodeURIComponent((d.name||"")+" 레시피");
+    const q2 = encodeURIComponent(d.name||"");
+    return `<div class="src" style="margin-top:6px"><b style="font-size:12.5px">🔍 레시피 찾아보기</b>
+      <div class="srcline" style="margin:4px 0"><a href="https://www.10000recipe.com/recipe/list.html?q=${q2}" target="_blank" rel="noopener">· 만개의레시피에서 '${d.name}' 검색</a></div>
+      <div class="srcline" style="margin:4px 0"><a href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">· 구글에서 '${d.name} 레시피' 검색</a></div>
+      <div class="hint" style="margin-top:4px; font-size:11px">⚡ 빠른 모드는 표준 조리법 기준이에요. 실제 후기·영상은 위 검색으로 확인하세요.</div></div>`;
+  }
   const grounded = (S.groundedList||[]).filter(r=>r&&/^https?:\/\//.test(r.url));
   const groundedUrls = new Set(grounded.map(r=>r.url));
   const host = u=>{ try{ return new URL(u).hostname.replace(/^www\./,""); }catch(_){ return ""; } };
@@ -695,7 +768,7 @@ function renderResults(){
   order.forEach(({d,i:origIdx},rank)=>{
     const saved = S.menus.some(m=>m.name===d.name);
     const el = document.createElement("div");
-    el.className = "card dish in"; el.style.animationDelay = (rank*0.08)+"s";
+    el.className = "card dish in"; el.id = "dishCard"+origIdx; el.style.animationDelay = (rank*0.08)+"s";
     const steps = (d.steps||[]).map((s,k)=>`<li><span class="n">${k+1}</span><span>${String(s).replace(/^\d+\)\s*/,"")}</span></li>`).join("");
     const badges = Object.keys(SORTS).map(k=>{
       const v=sc(d,k); if(v===null) return "";
@@ -712,7 +785,7 @@ function renderResults(){
       ${d.tip?`<div class="tip">💡 ${d.tip}</div>`:""}
       ${d.sourced_from?`<div class="src" style="color:var(--soft); font-size:12px">🧩 참고 흐름: ${d.sourced_from}</div>`:""}
       ${renderRefs(d)}
-      <div class="actions"><button class="btn ghost" onclick="saveDish(${origIdx})">${saved?"★ 저장됨":"☆ 내 메뉴에 저장"}</button></div>`;
+      <div class="actions noshot"><button class="btn ghost" onclick="saveDish(${origIdx})">${saved?"★ 저장됨":"☆ 내 메뉴에 저장"}</button><button class="btn ghost" onclick="saveImage('dishCard${origIdx}','${(d.name||"추천요리").replace(/'/g,"")}')">🖼 이미지</button></div>`;
     box.appendChild(el);
   });
   if(S.groundedList.length){
@@ -734,6 +807,7 @@ function saveDish(idx){
 // ── 주간 식단표 ──────────────────────────────────────────────
 function togglePlanBaby(){ S.planBaby=!S.planBaby; save("planBaby",S.planBaby); syncPlanToggles(); }
 function togglePlanPantry(){ S.planPantry=!S.planPantry; save("planPantry",S.planPantry); syncPlanToggles(); }
+function togglePlanAvoid(){ S.planAvoid=!S.planAvoid; save("planAvoid",S.planAvoid); syncPlanToggles(); }
 function syncPlanToggles(){
   const b1=document.getElementById("planBabyBtn");
   b1.className="toggle"+(S.planBaby?" on":"");
@@ -741,6 +815,9 @@ function syncPlanToggles(){
   const b2=document.getElementById("planPantryBtn");
   b2.className="toggle"+(S.planPantry?" on":"");
   b2.innerHTML=`🧲 <b style="font-family:'Jua'">저장고 재료 우선</b>&nbsp;`+(S.planPantry?"켜짐":"꺼짐");
+  const b3=document.getElementById("planAvoidBtn");
+  if(b3){ b3.className="toggle"+(S.planAvoid?" on":"");
+    b3.innerHTML=`📒 <b style="font-family:'Jua'">내 메뉴와 안 겹치게</b>&nbsp;`+(S.planAvoid?"켜짐":"꺼짐"); }
 }
 function buildWeekPrompt(){
   let p = `당신은 한국 가정식과 이유식에 능숙한 영양 균형 전문 식단 코치입니다.\n월요일부터 일요일까지, 매일 아침·점심·저녁이 있는 7일치 가족 식단표를 짜주세요.\n`;
@@ -748,6 +825,10 @@ function buildWeekPrompt(){
     ? `구성: 매일 유아식("${S.stage}" 단계, 12개월 미만이면 꿀·소금·설탕 금지, 간 최소화)의 아침·점심·저녁 + 어른식의 아침·점심·저녁 + 간식 1가지.\n어른식 아침은 간단하게(든든하지만 손 덜 가게).\n`
     : `구성: 매일 어른식의 아침·점심·저녁 + 간식 1가지. 아침은 간단하게.\n`;
   if(S.dislikes && S.dislikes.length) p += `[제외 재료 — 반드시 지킬 것] 다음 재료는 알레르기·비선호로 절대 사용하지 마: ${S.dislikes.join(", ")}. 장보기 리스트에도 절대 넣지 마.\n`;
+  if(S.planAvoid){
+    const avoid=(S.menus||[]).filter(m=>m.exclude!==false).map(m=>m.name);
+    if(avoid.length) p += `[중복 제외] 다음 요리는 이미 내 메뉴에 있으니 식단표에 넣지 말고 새로운 요리로 채워: ${avoid.join(", ")}.\n`;
+  }
   if(S.planPantry && S.selected.length) p += `집에 있는 재료(${S.selected.join(", ")})를 최대한 활용하되, 없는 재료를 써도 됩니다.\n`;
   else if(S.planPantry && S.pantry.length) p += `집에 있는 재료(${S.pantry.join(", ")})를 최대한 활용하되, 없는 재료를 써도 됩니다.\n`;
 
@@ -760,7 +841,7 @@ function buildWeekPrompt(){
   if(src.names.length){
     p += `\n[출처 — 참고할 것] 아래 등록된 출처(채널·책·기관)를 우선 참고해서 그 스타일·레시피로 메뉴를 골라줘: ${src.names.join(" / ")}.`;
     if(src.urls.length) p += ` 필요하면 이 URL들의 내용을 실제로 열어 읽어줘: ${src.urls.join(", ")}.`;
-    p += ` ① 등록된 채널의 영상 제목(대개 요리명)을 검색해 그 채널의 요리 중에서 우선 고르고, ② 부족하면 그 유튜버·인물 이름으로 구글 전체를 검색해 참고하고, ③ 그래도 부족하면 신뢰할 만한 레시피 사이트로 보완해줘. 실존하는 요리명만 쓰고, 여러 레시피를 섞은 새 조합 요리를 창작하지 마.\n`;
+    p += ` [검색 절약] 검색은 최대 2회 — ① "인물/채널명 + 주요 재료"로 웹 전체를 한 번에 검색해 그 인물의 요리들을 고르고, ② 부족할 때만 레시피 사이트에서 한 번 더 검색해. 그 결과 안에서 일주일 메뉴를 다 고르고, 세부 조리법은 네 표준 지식으로 채워. 실존하는 요리명만 쓰고, 여러 레시피를 섞은 새 조합 요리를 창작하지 마.\n`;
   }
   p += `\n`+P("식단표")+`\n`;
   if(S.healthy) p += P("건강식")+`\n`;
@@ -780,7 +861,7 @@ async function recommendWeek(){
   btn.disabled=true; btn.innerHTML=`<span class="spin">📅</span> 일주일 밸런스 맞추는 중…`;
   try{
     const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(S.model)}:generateContent?key=${encodeURIComponent(S.key)}`;
-    const res=await fetchAI(url, {contents:[{parts:[{text:buildWeekPrompt()}]}],tools:[{google_search:{}},{url_context:{}}],generationConfig:{temperature:0.9, maxOutputTokens:16384}});
+    const res=await fetchAI(url, {contents:[{parts:[{text:buildWeekPrompt()}]}],tools:[{google_search:{}}],generationConfig:{temperature:0.9, maxOutputTokens:16384}});
     const data=await res.json();
     const finish = data.candidates?.[0]?.finishReason;
     const text=((data.candidates?.[0]?.content?.parts)||[]).map(p=>p.text||"").join("");
@@ -990,10 +1071,12 @@ function renderMenus(){
   if(!S.menus.length){ box.innerHTML = `<div class="hint" style="text-align:center; padding:10px">아직 저장한 메뉴가 없어요.</div>`; return; }
   S.menus.forEach((m,i)=>{
     const el = document.createElement("div"); el.className="menuitem";
+    const excl = m.exclude!==false; // 기본: 추천에서 제외
     el.innerHTML = `<span style="font-size:20px">${m.emoji||"🍽️"}</span>
       <span class="nm">${m.name}${m.source_url?` · <a href="${m.source_url}" target="_blank" rel="noopener" style="color:var(--leaf); font-size:12px">출처</a>`:""}</span>
-      <span class="badge">${m.cat||""}</span>
+      <button class="exclbtn" title="추천에 나올지 여부" style="border:1px solid ${excl?'var(--accent)':'var(--line)'}; background:${excl?'var(--tint)':'#fff'}; color:${excl?'var(--accent)':'var(--soft)'}; border-radius:8px; padding:4px 8px; font-size:11px; cursor:pointer; white-space:nowrap">${excl?'🚫 추천 제외':'✅ 추천 포함'}</button>
       <button class="x" aria-label="삭제">✕</button>`;
+    el.querySelector(".exclbtn").onclick = ()=>{ m.exclude = !excl; save("menus",S.menus); renderMenus(); };
     el.querySelector(".x").onclick = ()=>{ S.menus.splice(i,1); save("menus",S.menus); renderMenus(); };
     box.appendChild(el);
   });
@@ -1093,7 +1176,7 @@ document.getElementById("apiKey").value = S.key;
 document.getElementById("modelSel").value = S.model;
 toggleHealthy(); toggleHealthy(); // 저장된 값 기준으로 표시 동기화
 renderPantry(); renderCats(); renderMenus(); renderSrcTabs(); renderSrcList(); renderKeyStatus();
-syncPlanToggles(); renderWeek(); renderPromptEditor(); renderDislikes();
+syncPlanToggles(); renderWeek(); renderPromptEditor(); renderDislikes(); renderMode();
 const disEl=document.getElementById("newDis");
 if(disEl) disEl.addEventListener("keydown",e=>{ if(e.key==="Enter") addDislike(); });
 </script>
