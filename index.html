@@ -1019,9 +1019,17 @@ function saveImage(id, name){
     alert("이미지 도구를 아직 못 불러왔어요. 인터넷 연결을 확인하고 잠시 후 다시 눌러주세요.");
     return;
   }
-  html2canvas(el,{
+  const run=()=>html2canvas(el,{
     backgroundColor:"#FFFDF6", scale:2, useCORS:true,
-    ignoreElements:(n)=>n.classList&&n.classList.contains("noshot")
+    scrollX:0, scrollY:-window.scrollY,
+    windowWidth:document.documentElement.scrollWidth,
+    ignoreElements:(n)=>n.classList&&n.classList.contains("noshot"),
+    onclone:(doc)=>{
+      // 애니메이션 중간 상태(반투명·이동)로 찍히는 것 방지: 복제본에서 완성 상태로 고정
+      doc.querySelectorAll(".in").forEach(x=>{ x.style.animation="none"; x.style.opacity="1"; x.style.transform="none"; });
+      const t=doc.getElementById(id);
+      if(t){ t.style.animation="none"; t.style.opacity="1"; t.style.transform="none"; }
+    }
   }).then(canvas=>{
     const stamp=(S.week&&S.week.madeAt?S.week.madeAt:"").replace(/[^0-9]/g,"");
     const a=document.createElement("a");
@@ -1029,6 +1037,8 @@ function saveImage(id, name){
     a.download=`${name}${stamp?"_"+stamp:""}.png`;
     document.body.appendChild(a); a.click(); a.remove();
   }).catch(()=>alert("이미지 저장에 실패했어요. 다시 시도해 주세요."));
+  // 폰트가 덜 로드되면 글자가 깨질 수 있어 폰트 준비 후 캡처
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(run); } else { run(); }
 }
 
 
